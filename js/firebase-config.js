@@ -1,13 +1,23 @@
-// =========================================================
-// DÁN CONFIG FIREBASE CỦA BẠN VÀO ĐÂY
-// Lấy ở: Firebase Console > Project settings > General >
-// "Your apps" > SDK setup and configuration > Config
-// =========================================================
-export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTo2m1Hib2II0DeVvX4Q5eDXApoMqt5xw",
+    authDomain: "flashcard-f2998.firebaseapp.com",
+    projectId: "flashcard-f2998",
+    storageBucket: "flashcard-f2998.firebasestorage.app",
+    messagingSenderId: "319650668178",
+    appId: "1:319650668178:web:a6266132b5d84a507dd04b",
+    measurementId: "G-755346WJEL"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
