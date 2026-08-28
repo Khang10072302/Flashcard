@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcard — Từ Vựng</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="airmail-rail"></div>
+  <div class="shell">
+    <nav class="nav">
+      <a class="brand" href="index.html">TỪ VỰNG</a>
+      <a class="navlink" href="index.html"><span class="ring">✉</span>Sổ từ</a>
+      <a class="navlink active" href="flashcards.html"><span class="ring">▤</span>Flashcard</a>
+      <a class="navlink" href="writing.html"><span class="ring">✎</span>Luyện viết</a>
+      <div class="spacer"></div>
+      <a class="navlink logout" href="#" id="logoutBtn"><span class="ring">⇥</span>Thoát</a>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h1>Flashcard</h1>
+          <div class="sub" id="deckLabel">Đang tải…</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);text-transform:none;font-weight:400;">
+          <input type="checkbox" id="includeMastered" style="width:auto;">
+          Bao gồm từ đã thuộc
+        </label>
+      </div>
+
+      <div class="content">
+        <div id="stage" class="card-stage"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/flashcards.js"></script>
+</body>
+</html>
