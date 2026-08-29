@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đăng nhập — Sổ Từ Vựng</title>
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
   <div class="airmail-rail"></div>
   <div class="auth-shell">
 
-    <!-- ============ DESKTOP: mặt trước phong bì (kích thước như thư thật) ============ -->
-    <div class="envelope-outer desktop-only">
+    <!-- Một khối phong bì duy nhất, dùng chung cho cả desktop và mobile.
+         CSS (@media max-width:760px) sẽ tự đổi kích thước/tỉ lệ sang dạng đứng
+         và ẩn khối "Kính gửi" khi màn hình nhỏ. -->
+    <div class="envelope-outer">
       <div class="envelope-card">
         <div class="stamp-corner">
           <img class="stamp-img" alt="Tem thư">
@@ -20,16 +22,15 @@
             <div class="stamp-text">PAR<br>AVION</div>
           </div>
         </div>
-        <div class="envelope-postmark">SỔ TỪ VỰNG</div>
 
+        <!-- Kính gửi — chỉ hiện trên desktop, xem NOTE vị trí/cỡ chữ trong css/style.css -->
+        <div class="recipient-block">
+          <span class="addr-label">Kính gửi</span>
+          <span class="recipient-value">Sổ Từ Vựng</span>
+        </div>
+
+        <!-- Người gửi + đăng nhập — luôn nằm giữa lá thư -->
         <div class="address-block">
-          <div class="mode-label js-title">Đăng nhập</div>
-
-          <div class="line">
-            <span class="addr-label">Kính gửi</span>
-            <span class="addr-value">Sổ Từ Vựng</span>
-          </div>
-
           <form class="authForm">
             <div class="line from-line field">
               <label class="addr-label">Người gửi</label>
@@ -48,30 +49,6 @@
             <button type="button" class="js-toggle-btn">Đăng ký</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ============ MOBILE: thẻ đơn giản ============ -->
-    <div class="auth-card mobile-only">
-      <h1 class="js-title">Đăng nhập</h1>
-      <div class="sub">Sổ từ vựng của riêng bạn, đồng bộ ở mọi thiết bị.</div>
-
-      <form class="authForm">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" class="f-email" required autocomplete="email">
-        </div>
-        <div class="field">
-          <label>Mật khẩu</label>
-          <input type="password" class="f-password" required autocomplete="current-password" minlength="6">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block js-submit">Đăng nhập</button>
-        <div class="error-msg js-error"></div>
-      </form>
-
-      <div class="auth-toggle">
-        <span class="js-toggle-text">Chưa có tài khoản?</span>
-        <button type="button" class="js-toggle-btn">Đăng ký</button>
       </div>
     </div>
 
@@ -107,7 +84,6 @@
     });
 
     const forms = document.querySelectorAll(".authForm");
-    const titles = document.querySelectorAll(".js-title");
     const submitBtns = document.querySelectorAll(".js-submit");
     const toggleTexts = document.querySelectorAll(".js-toggle-text");
     const toggleBtns = document.querySelectorAll(".js-toggle-btn");
@@ -115,7 +91,6 @@
 
     function applyModeUI() {
       const isRegister = mode === "register";
-      titles.forEach(el => el.textContent = isRegister ? "Tạo tài khoản" : "Đăng nhập");
       submitBtns.forEach(el => el.textContent = isRegister ? "Đăng ký" : "Đăng nhập");
       toggleTexts.forEach(el => el.textContent = isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?");
       toggleBtns.forEach(el => el.textContent = isRegister ? "Đăng nhập" : "Đăng ký");
