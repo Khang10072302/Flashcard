@@ -380,31 +380,39 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
   color:var(--ink);
 }
 
-/* NOTE: khối "Người gửi" (form đăng nhập) — luôn nằm giữa phong bì (do .envelope-card
-   dùng flex + align/justify-content:center). Đổi max-width để đổi độ rộng khối này. */
-.address-block{
-  position:relative;z-index:1;
-  width:100%;max-width:432px;
-}
-.address-block .line{margin-bottom:26px;}
-.addr-label{
-  display:block;font-family:var(--font-mono);font-size:12px;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
-  margin-bottom:7px;
-}
-.from-line input[type=email]{
-  border:none;border-bottom:1.5px dashed var(--line);border-radius:0;
-  padding:5px 2px 9px;background:transparent;font-family:var(--font-display);font-size:22px;
-}
 .from-line input[type=email]:focus{box-shadow:none;border-bottom-color:var(--blue);}
 
-/* các trường/label/nút bên trong phong bì — phóng to 20% so với cỡ mặc định toàn trang */
-.envelope-card label{font-size:14px;}
-.envelope-card .field{margin-bottom:19px;}
-.envelope-card input[type=password]{font-size:18px;padding:13px 16px;}
-.envelope-card .btn{font-size:16px;padding:13px 24px;}
-.envelope-card .error-msg{font-size:16px;}
-.envelope-card .auth-toggle{font-size:16px;}
+/* =====================================================================
+   TỪ ĐÂY TRỞ XUỐNG: mọi kích thước của khối "Người gửi" (form đăng nhập)
+   được khai báo TÁCH RIÊNG hoàn toàn cho desktop và mobile — trong hai
+   khối @media khác nhau, không có rule nào nằm ngoài media query. Nghĩa
+   là chỉnh số trong khối "desktop" không bao giờ ảnh hưởng đến "mobile"
+   và ngược lại. Muốn đổi kích thước ở size nào, sửa đúng trong khối đó.
+   ===================================================================== */
+
+/* NOTE: kích thước khối "Người gửi" trên DESKTOP (màn hình rộng hơn 760px) */
+@media (min-width:761px){
+  .address-block{
+    position:relative;z-index:1;
+    width:100%;max-width:432px;         /* độ rộng khối "Người gửi" */
+  }
+  .address-block .line{margin-bottom:26px;}
+  .addr-label{
+    display:block;font-family:var(--font-mono);font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+  .from-line input[type=email]{
+    border:none;border-bottom:1.5px dashed var(--line);border-radius:0;
+    padding:5px 2px 9px;background:transparent;font-family:var(--font-display);font-size:22px;
+  }
+  .envelope-card label{font-size:14px;}
+  .envelope-card .field{margin-bottom:19px;}
+  .envelope-card input[type=password]{font-size:18px;padding:13px 16px;}
+  .envelope-card .btn{font-size:16px;padding:13px 24px;}
+  .envelope-card .error-msg{font-size:16px;}
+  .envelope-card .auth-toggle{font-size:16px;}
+}
 
 @media (max-width:900px){
   .envelope-outer{max-width:92vw;}
@@ -412,6 +420,8 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 }
 
 /* ---------- mobile: phong bì dạng đứng, không có "Kính gửi", tem ở góc trên-phải ---------- */
+/* NOTE: kích thước khối "Người gửi" trên MOBILE (màn hình từ 760px trở xuống) —
+   hoàn toàn độc lập với khối desktop ở trên. */
 @media (max-width:760px){
   .envelope-outer{max-width:360px;padding:8px;}
   .envelope-card{
@@ -419,12 +429,24 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
     padding:64px 24px 30px;
   }
   .recipient-block{display:none;}
-  .stamp-corner{top:18px;right:20px;width:70px;height:70px;} /*thay đổi width và height để thay đổi kích thước tem*/
+  .stamp-corner{top:18px;right:20px;width:70px;height:70px;} /*thay đổi width and height để đổi kích thước tem*/
   .stamp-corner .stamp-icon{font-size:15px;}
   .stamp-corner .stamp-text{font-size:7px;}
-  .address-block{max-width:280px;}
-  .addr-label{font-size:10px;}
-  .from-line input[type=email]{font-size:16px;padding:4px 2px 8px;}
+
+  .address-block{
+    position:relative;z-index:1;
+    width:100%;max-width:280px; 
+  }
+  .address-block .line{margin-bottom:16px;}
+  .addr-label{
+    display:block;font-family:var(--font-mono);font-size:10px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .from-line input[type=email]{
+    border:none;border-bottom:1.5px dashed var(--line);border-radius:0;
+    padding:4px 2px 8px;background:transparent;font-family:var(--font-display);font-size:16px;
+  }
   .envelope-card label{font-size:12px;}
   .envelope-card .field{margin-bottom:15px;}
   .envelope-card input[type=password]{font-size:15px;padding:11px 13px;}
