@@ -10,45 +10,46 @@
   <div class="airmail-rail"></div>
   <div class="auth-shell">
 
-    <!-- ============ DESKTOP: mặt trước phong bì ============ -->
-    <div class="envelope-card desktop-only">
-      <div class="airmail-edge"></div>
-      <svg class="flap-svg" viewBox="0 0 420 64" preserveAspectRatio="none">
-        <line x1="0" y1="1" x2="420" y2="1"/>
-        <line x1="0" y1="1" x2="210" y2="62"/>
-        <line x1="420" y1="1" x2="210" y2="62"/>
-      </svg>
+    <!-- ============ DESKTOP: mặt trước phong bì (kích thước như thư thật) ============ -->
+    <div class="envelope-outer desktop-only">
+      <div class="envelope-card">
+        <svg class="flap-svg" viewBox="0 0 700 440" preserveAspectRatio="none">
+          <line x1="0" y1="0" x2="700" y2="0"/>
+          <line x1="0" y1="0" x2="350" y2="290"/>
+          <line x1="700" y1="0" x2="350" y2="290"/>
+        </svg>
 
-      <div class="stamp-corner">
-        <div class="stamp-icon">✉</div>
-        <div class="stamp-text">PAR<br>AVION</div>
-      </div>
-      <div class="envelope-postmark">SỔ TỪ VỰNG</div>
-
-      <div class="address-block">
-        <div class="mode-label js-title">Đăng nhập</div>
-
-        <div class="line">
-          <span class="addr-label">Kính gửi</span>
-          <span class="addr-value">Sổ Từ Vựng</span>
+        <div class="stamp-corner">
+          <div class="stamp-icon">✉</div>
+          <div class="stamp-text">PAR<br>AVION</div>
         </div>
+        <div class="envelope-postmark">SỔ TỪ VỰNG</div>
 
-        <form class="authForm">
-          <div class="line from-line field">
-            <label class="addr-label">Người gửi</label>
-            <input type="email" class="f-email" placeholder="ten@email.com" required autocomplete="email">
-          </div>
-          <div class="field">
-            <label>Mật khẩu</label>
-            <input type="password" class="f-password" required autocomplete="current-password" minlength="6">
-          </div>
-          <button type="submit" class="btn btn-primary btn-block js-submit">Đăng nhập</button>
-          <div class="error-msg js-error"></div>
-        </form>
+        <div class="address-block">
+          <div class="mode-label js-title">Đăng nhập</div>
 
-        <div class="auth-toggle">
-          <span class="js-toggle-text">Chưa có tài khoản?</span>
-          <button type="button" class="js-toggle-btn">Đăng ký</button>
+          <div class="line">
+            <span class="addr-label">Kính gửi</span>
+            <span class="addr-value">Sổ Từ Vựng</span>
+          </div>
+
+          <form class="authForm">
+            <div class="line from-line field">
+              <label class="addr-label">Người gửi</label>
+              <input type="email" class="f-email" placeholder="ten@email.com" required autocomplete="email">
+            </div>
+            <div class="field">
+              <label>Mật khẩu</label>
+              <input type="password" class="f-password" required autocomplete="current-password" minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block js-submit">Đăng nhập</button>
+            <div class="error-msg js-error"></div>
+          </form>
+
+          <div class="auth-toggle">
+            <span class="js-toggle-text">Chưa có tài khoản?</span>
+            <button type="button" class="js-toggle-btn">Đăng ký</button>
+          </div>
         </div>
       </div>
     </div>
