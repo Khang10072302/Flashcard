@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đăng nhập — Sổ Từ Vựng</title>
-<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
   <div class="airmail-rail"></div>
@@ -13,15 +13,12 @@
     <!-- ============ DESKTOP: mặt trước phong bì (kích thước như thư thật) ============ -->
     <div class="envelope-outer desktop-only">
       <div class="envelope-card">
-        <svg class="flap-svg" viewBox="0 0 700 440" preserveAspectRatio="none">
-          <line x1="0" y1="0" x2="700" y2="0"/>
-          <line x1="0" y1="0" x2="350" y2="290"/>
-          <line x1="700" y1="0" x2="350" y2="290"/>
-        </svg>
-
         <div class="stamp-corner">
-          <div class="stamp-icon">✉</div>
-          <div class="stamp-text">PAR<br>AVION</div>
+          <img class="stamp-img" alt="Tem thư">
+          <div class="stamp-fallback">
+            <div class="stamp-icon">✉</div>
+            <div class="stamp-text">PAR<br>AVION</div>
+          </div>
         </div>
         <div class="envelope-postmark">SỔ TỪ VỰNG</div>
 
@@ -85,6 +82,25 @@
       from "./js/firebase-init.js";
 
     let mode = "login"; // hoặc "register"
+
+    // ==== TEM NGẪU NHIÊN ====
+    // Đặt ảnh vào assets/stamps/ với tên: stamp1.png, stamp2.png, stamp3.png ...
+    // (đánh số liên tục, không có số 0 ở đầu). Thêm ảnh mới thì tăng STAMP_COUNT.
+    const STAMP_COUNT = 15;
+    const STAMP_FILES = Array.from({ length: STAMP_COUNT }, (_, i) => `assets/stamps/stamp${i + 1}.png`);
+    const stampImg = document.querySelector(".stamp-img");
+    const stampFallback = document.querySelector(".stamp-fallback");
+    if (stampImg && STAMP_FILES.length) {
+      stampImg.addEventListener("load", () => {
+        stampImg.style.display = "block";
+        if (stampFallback) stampFallback.style.display = "none";
+      });
+      stampImg.addEventListener("error", () => {
+        stampImg.style.display = "none";
+        if (stampFallback) stampFallback.style.display = "flex";
+      });
+      stampImg.src = STAMP_FILES[Math.floor(Math.random() * STAMP_FILES.length)];
+    }
 
     onAuthStateChanged(auth, (user) => {
       if (user) window.location.href = "index.html";
