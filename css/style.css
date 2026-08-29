@@ -365,12 +365,10 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 /* NOTE: kích thước con tem — chỉnh width/height ở đây */
 .stamp-corner{
   position:absolute;top:31px;right:36px;
-  width:100px;height:106px;
+  width:110px;height:110px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;
   transform:rotate(3deg);
-  background:var(--paper);
-  color:var(--ink-soft);
   overflow:hidden;
 }
 .stamp-corner .stamp-img{
