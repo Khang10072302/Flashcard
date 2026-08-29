@@ -366,8 +366,6 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 .stamp-corner{
   position:absolute;top:31px;right:36px;
   width:100px;height:106px;
-  /*border:1.5px dashed var(--ink-soft);
-  border-radius:4px;*/
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;
   transform:rotate(3deg);
@@ -377,7 +375,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 }
 .stamp-corner .stamp-img{
   display:none;
-  width:100%;height:100%;object-fit:cover;
+  width:100%;height:100%;object-fit:fill;
 }
 .stamp-corner .stamp-fallback{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
