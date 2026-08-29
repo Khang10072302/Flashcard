@@ -419,7 +419,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
     padding:64px 24px 30px;
   }
   .recipient-block{display:none;}
-  .stamp-corner{top:18px;right:20px;width:58px;height:58px;}
+  .stamp-corner{top:18px;right:20px;width:70px;height:70px;} /*thay đổi width và height để thay đổi kích thước tem*/
   .stamp-corner .stamp-icon{font-size:15px;}
   .stamp-corner .stamp-text{font-size:7px;}
   .address-block{max-width:280px;}
