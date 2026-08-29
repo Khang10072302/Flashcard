@@ -394,7 +394,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 @media (min-width:761px){
   .address-block{
     position:relative;z-index:1;
-    width:100%;max-width:432px;         /* độ rộng khối "Người gửi" */
+    width:50%;max-width:432px;         /* độ rộng khối "Người gửi" */
   }
   .address-block .line{margin-bottom:26px;}
   .addr-label{
