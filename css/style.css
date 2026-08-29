@@ -365,9 +365,9 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 /* NOTE: kích thước con tem — chỉnh width/height ở đây */
 .stamp-corner{
   position:absolute;top:31px;right:36px;
-  width:84px;height:106px;
-  border:1.5px dashed var(--ink-soft);
-  border-radius:4px;
+  width:100px;height:106px;
+  /*border:1.5px dashed var(--ink-soft);
+  border-radius:4px;*/
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;
   transform:rotate(3deg);
