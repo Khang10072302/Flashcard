@@ -324,7 +324,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 .auth-toggle button{background:none;border:none;color:var(--blue);cursor:pointer;font-weight:600;padding:0;}
 .error-msg{color:var(--red);font-size:13px;margin-top:8px;}
 
-/* which variant shows at which size */
+/* which variant shows at which size — ONE breakpoint, no other rule may touch these two classes */
 .desktop-only{display:block;}
 .mobile-only{display:none;}
 @media (max-width:760px){
@@ -341,7 +341,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 .auth-card h1{font-size:26px;margin-bottom:4px;}
 .auth-card .sub{color:var(--ink-soft);font-size:13px;margin-bottom:22px;}
 
-/* ---------- envelope-front login card ---------- */
+/* ---------- envelope-front login card (desktop) ---------- */
 .envelope-card{
   position:relative;
   width:100%;max-width:420px;
@@ -388,21 +388,6 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 
 .address-block{padding:16px 32px 34px;}
 .address-block .line{margin-bottom:22px;}
-.mobile-only{display:none;}
-.mobile-heading h1{font-size:26px;margin-bottom:4px;}
-.mobile-heading .sub{color:var(--ink-soft);font-size:13px;margin-bottom:22px;}
-@media (max-width:520px){
-  .desktop-only{display:none !important;}
-  .mobile-only{display:block;}
-  .envelope-card{padding:34px 26px;border-radius:6px;box-shadow:0 20px 50px -24px rgba(29,42,68,.4);}
-  .envelope-card .airmail-edge,.envelope-card .flap-svg,.stamp-corner,.envelope-postmark{display:none;}
-  .address-block{padding:0;}
-  .from-line input[type=email]{
-    border:1.5px solid var(--line);border-radius:var(--radius);
-    padding:11px 13px;font-family:var(--font-body);font-size:15px;
-  }
-  .from-line input[type=email]:focus{box-shadow:0 0 0 3px rgba(38,87,166,.15);border-bottom-color:var(--line);}
-}
 .addr-label{
   display:block;font-family:var(--font-mono);font-size:10px;
   letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
