@@ -1,4 +1,8 @@
+// =========================================================
 // DÁN CONFIG FIREBASE CỦA BẠN VÀO ĐÂY
+// Lấy ở: Firebase Console > Project settings > General >
+// "Your apps" > SDK setup and configuration > Config
+// =========================================================
 export const firebaseConfig = {
   apiKey: "AIzaSyDTo2m1Hib2II0DeVvX4Q5eDXApoMqt5xw",
   authDomain: "flashcard-f2998.firebaseapp.com",
