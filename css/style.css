@@ -364,7 +364,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 .stamp-corner .stamp-icon{font-size:23px;color:var(--blue);}
 .stamp-corner .stamp-text{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;line-height:1.3;text-align:center;color:var(--ink-soft);}
 
-/* NOTE: khối "Kính gửi" — góc trên-trái phong bì, chỉ hiện ở desktop (ẩn dưới 760px, xem media query cuối file).
+/* NOTE: khối "Kính gửi" — góc trên-trái phong bì, hiện ở cả desktop và mobile, vị trí/cỡ chữ khai báo riêng ở mỗi @media.
    Đổi top/left để đổi vị trí, font-size trong .recipient-value để đổi cỡ chữ tên web. */
 .recipient-block{
   position:absolute;
@@ -394,7 +394,7 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
 @media (min-width:761px){
   .address-block{
     position:relative;z-index:1;
-    width:50%;max-width:432px;         /* độ rộng khối "Người gửi" */
+    width:100%;max-width:432px;         /* độ rộng khối "Người gửi" */
   }
   .address-block .line{margin-bottom:26px;}
   .addr-label{
@@ -428,14 +428,16 @@ textarea{resize:vertical;font-family:var(--font-mono);font-size:13px;line-height
     min-height:520px;
     padding:64px 24px 30px;
   }
-  .recipient-block{display:none;}
-  .stamp-corner{top:18px;right:20px;width:70px;height:70px;} /*thay đổi width and height để đổi kích thước tem*/
+  .recipient-block{top:16px;left:20px;}
+  .recipient-block .addr-label{margin-bottom:3px;}
+  .recipient-value{font-size:14px;}
+  .stamp-corner{top:18px;right:20px;width:58px;height:58px;}
   .stamp-corner .stamp-icon{font-size:15px;}
   .stamp-corner .stamp-text{font-size:7px;}
 
   .address-block{
     position:relative;z-index:1;
-    width:100%;max-width:280px; 
+    width:100%;max-width:280px;         /* độ rộng khối "Người gửi" trên mobile */
   }
   .address-block .line{margin-bottom:16px;}
   .addr-label{
