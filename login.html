@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đăng nhập — Sổ Từ Vựng</title>
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
   <div class="airmail-rail"></div>
@@ -28,41 +28,25 @@
           <span class="recipient-value">Sổ Từ Vựng</span>
         </div>
 
-        <!-- Người gửi — luôn nằm giữa lá thư. Đăng nhập không cần mật khẩu:
-             chỉ cần email, bấm "Gửi thư" là Firebase gửi 1 email chứa link đăng nhập. -->
+        <!-- Người gửi + đăng nhập — luôn nằm giữa lá thư -->
         <div class="address-block">
-
-          <form class="authForm" id="sendForm">
+          <form class="authForm">
             <div class="line from-line field">
               <label class="addr-label">Người gửi</label>
               <input type="email" class="f-email" placeholder="ten@email.com" required autocomplete="email">
             </div>
-            <button type="submit" class="btn btn-primary btn-block js-submit">Gửi thư</button>
+            <div class="field">
+              <label>Địa chỉ</label>
+              <input type="password" class="f-password" placeholder="Mật khẩu" required autocomplete="current-password" minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block js-submit">Đăng nhập</button>
             <div class="error-msg js-error"></div>
           </form>
 
-          <!-- Hiện sau khi đã gửi thư thành công -->
-          <div id="sentState" style="display:none;">
-            <p style="margin:0 0 14px;font-size:14.5px;color:var(--ink-soft);">
-              Đã gửi thư đến <b id="sentEmail" style="color:var(--ink);"></b> —
-              mở hộp thư và bấm vào link trong đó để vào Sổ Từ Vựng.
-            </p>
-            <button type="button" class="btn btn-block" id="resendBtn">Gửi lại thư khác</button>
+          <div class="auth-toggle">
+            <span class="js-toggle-text">Chưa có tài khoản?</span>
+            <button type="button" class="js-toggle-btn">Đăng ký</button>
           </div>
-
-          <!-- Hiện khi bấm link xong nhưng thiếu email đã lưu (mở link ở máy/trình duyệt khác) -->
-          <form id="confirmEmailForm" style="display:none;">
-            <p style="margin:0 0 14px;font-size:14.5px;color:var(--ink-soft);">
-              Để xác nhận, nhập lại đúng email bạn đã dùng để gửi thư:
-            </p>
-            <div class="line from-line field">
-              <label class="addr-label">Người gửi</label>
-              <input type="email" class="f-email" placeholder="ten@email.com" required autocomplete="email">
-            </div>
-            <button type="submit" class="btn btn-primary btn-block js-submit">Vào Sổ Từ Vựng</button>
-            <div class="error-msg js-error"></div>
-          </form>
-
         </div>
       </div>
     </div>
@@ -70,10 +54,10 @@
   </div>
 
   <script type="module">
-    import { auth, onAuthStateChanged, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink }
+    import { auth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword }
       from "./js/firebase-init.js";
 
-    const STORAGE_KEY = "emailForSignIn";
+    let mode = "login"; // hoặc "register"
 
     // ==== TEM NGẪU NHIÊN ====
     // Đặt ảnh vào assets/stamps/ với tên: stamp1.png, stamp2.png, stamp3.png ...
@@ -94,88 +78,63 @@
       stampImg.src = STAMP_FILES[Math.floor(Math.random() * STAMP_FILES.length)];
     }
 
-    const sendForm = document.getElementById("sendForm");
-    const sentState = document.getElementById("sentState");
-    const sentEmailEl = document.getElementById("sentEmail");
-    const resendBtn = document.getElementById("resendBtn");
-    const confirmEmailForm = document.getElementById("confirmEmailForm");
-
     onAuthStateChanged(auth, (user) => {
       if (user) window.location.href = "index.html";
     });
 
-    // Nếu URL hiện tại chính là link đăng nhập Firebase gửi qua email
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      let email = window.localStorage.getItem(STORAGE_KEY);
-      if (email) {
-        completeSignIn(email);
-      } else {
-        // Mở link ở máy/trình duyệt khác — không có sẵn email đã lưu, hỏi lại
-        sendForm.style.display = "none";
-        confirmEmailForm.style.display = "block";
-      }
+    const forms = document.querySelectorAll(".authForm");
+    const submitBtns = document.querySelectorAll(".js-submit");
+    const toggleTexts = document.querySelectorAll(".js-toggle-text");
+    const toggleBtns = document.querySelectorAll(".js-toggle-btn");
+    const errorEls = document.querySelectorAll(".js-error");
+
+    function applyModeUI() {
+      const isRegister = mode === "register";
+      submitBtns.forEach(el => el.textContent = isRegister ? "Đăng ký" : "Đăng nhập");
+      toggleTexts.forEach(el => el.textContent = isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?");
+      toggleBtns.forEach(el => el.textContent = isRegister ? "Đăng nhập" : "Đăng ký");
+      errorEls.forEach(el => el.textContent = "");
     }
 
-    sendForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const errorEl = sendForm.querySelector(".js-error");
-      const submitBtn = sendForm.querySelector(".js-submit");
-      const email = sendForm.querySelector(".f-email").value.trim();
-      errorEl.textContent = "";
-      submitBtn.disabled = true;
-      try {
-        await sendLink(email);
-        window.localStorage.setItem(STORAGE_KEY, email);
-        sendForm.style.display = "none";
-        sentEmailEl.textContent = email;
-        sentState.style.display = "block";
-      } catch (err) {
-        errorEl.textContent = friendlyError(err.code);
-      } finally {
-        submitBtn.disabled = false;
-      }
+    toggleBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        mode = mode === "login" ? "register" : "login";
+        applyModeUI();
+      });
     });
 
-    confirmEmailForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const errorEl = confirmEmailForm.querySelector(".js-error");
-      const submitBtn = confirmEmailForm.querySelector(".js-submit");
-      const email = confirmEmailForm.querySelector(".f-email").value.trim();
-      errorEl.textContent = "";
-      submitBtn.disabled = true;
-      try {
-        await completeSignIn(email);
-      } catch (err) {
-        errorEl.textContent = friendlyError(err.code);
-        submitBtn.disabled = false;
-      }
+    forms.forEach(form => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errorEl = form.querySelector(".js-error");
+        const submitBtn = form.querySelector(".js-submit");
+        const email = form.querySelector(".f-email").value.trim();
+        const password = form.querySelector(".f-password").value;
+        errorEl.textContent = "";
+        submitBtn.disabled = true;
+        try {
+          if (mode === "login") {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+          }
+          window.location.href = "index.html";
+        } catch (err) {
+          errorEl.textContent = friendlyError(err.code);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
     });
-
-    resendBtn.addEventListener("click", () => {
-      sentState.style.display = "none";
-      sendForm.style.display = "block";
-      sendForm.querySelector(".f-email").value = "";
-    });
-
-    function sendLink(email) {
-      const actionCodeSettings = {
-        url: window.location.origin + window.location.pathname,
-        handleCodeInApp: true
-      };
-      return sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    }
-
-    async function completeSignIn(email) {
-      await signInWithEmailLink(auth, email, window.location.href);
-      window.localStorage.removeItem(STORAGE_KEY);
-      window.location.href = "index.html";
-    }
 
     function friendlyError(code) {
       const map = {
         "auth/invalid-email": "Email không hợp lệ.",
-        "auth/invalid-action-code": "Link đã được dùng hoặc không hợp lệ, gửi lại thư mới nhé.",
-        "auth/expired-action-code": "Link đã hết hạn, gửi lại thư mới nhé."
+        "auth/user-not-found": "Không tìm thấy tài khoản này.",
+        "auth/wrong-password": "Sai mật khẩu.",
+        "auth/invalid-credential": "Email hoặc mật khẩu không đúng.",
+        "auth/email-already-in-use": "Email này đã được đăng ký.",
+        "auth/weak-password": "Mật khẩu cần ít nhất 6 ký tự."
       };
       return map[code] || "Có lỗi xảy ra, thử lại nhé.";
     }
