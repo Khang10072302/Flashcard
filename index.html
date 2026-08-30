@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ Từ Vựng</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app-body">
+  <div class="app-shell">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="icon">📖</div>
+          <div>
+            <div class="name">Sổ Từ Vựng</div>
+            <div class="sub" id="wordCountSub">— từ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-progress">
+        <div class="row">
+          <span class="label">Tiến độ hôm nay</span>
+          <span class="pct" id="sidebarPct">0%</span>
+        </div>
+        <div class="track"><div class="fill" id="sidebarFill" style="width:0%;"></div></div>
+        <div class="note" id="sidebarNote">0 / 0 đã thuộc</div>
+      </div>
+
+      <div class="sidebar-nav">
+        <div class="nav-section-label">HỌC TẬP</div>
+        <button class="nav-item" data-section="inbox"><span class="ico"></span>Sổ từ vựng</button>
+        <button class="nav-item" data-section="flashcard"><span class="ico"></span>Flashcard</button>
+        <button class="nav-item" data-section="writing"><span class="ico"></span>Luyện viết</button>
+        <button class="nav-item" data-section="quiz"><span class="ico"></span>Quiz</button>
+        <button class="nav-item" data-section="progress"><span class="ico"></span>Tiến độ</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="new-word-btn" id="newWordBtn"><span>+</span> Từ mới</button>
+        <button class="logout-link" id="logoutBtn">Đăng xuất</button>
+      </div>
+    </nav>
+
+    <main class="main-content" id="content">
+      <div class="loading-note">Đang tải…</div>
+    </main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
