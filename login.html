@@ -39,6 +39,10 @@
               <label>Địa chỉ</label>
               <input type="password" class="f-password" placeholder="Mật khẩu" required autocomplete="current-password" minlength="6">
             </div>
+            <div class="field confirm-password-field" style="display:none;">
+              <label>Xác nhận địa chỉ</label>
+              <input type="password" class="f-password-confirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="6">
+            </div>
             <button type="submit" class="btn btn-primary btn-block js-submit">Gửi thư</button>
             <div class="error-msg js-error"></div>
           </form>
@@ -94,6 +98,14 @@
       toggleTexts.forEach(el => el.textContent = isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?");
       toggleBtns.forEach(el => el.textContent = isRegister ? "Đăng nhập" : "Đăng ký");
       errorEls.forEach(el => el.textContent = "");
+      document.querySelectorAll(".confirm-password-field").forEach(el => {
+        el.style.display = isRegister ? "block" : "none";
+        const input = el.querySelector(".f-password-confirm");
+        if (input) {
+          input.required = isRegister;
+          if (!isRegister) input.value = "";
+        }
+      });
     }
 
     toggleBtns.forEach(btn => {
@@ -111,6 +123,16 @@
         const email = form.querySelector(".f-email").value.trim();
         const password = form.querySelector(".f-password").value;
         errorEl.textContent = "";
+
+        if (mode === "register") {
+          const confirmInput = form.querySelector(".f-password-confirm");
+          const confirmPassword = confirmInput ? confirmInput.value : "";
+          if (password !== confirmPassword) {
+            errorEl.textContent = "Hai mật khẩu nhập lại không khớp nhau.";
+            return;
+          }
+        }
+
         submitBtn.disabled = true;
         try {
           if (mode === "login") {
