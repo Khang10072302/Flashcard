@@ -281,6 +281,8 @@ input,textarea{font-family:inherit;}
 .done-state .emoji{font-size:64px;margin-bottom:24px;}
 .done-state h1{font-size:28px;letter-spacing:-.6px;}
 .done-state p{font-size:15px;color:var(--ink-soft);margin-top:8px;}
+.done-stats{display:flex;justify-content:center;gap:24px;margin-top:14px;font-size:14px;color:var(--ink-soft);}
+.done-stats b{font-size:16px;}
 
 /* ---------- writing ---------- */
 .mode-switch{display:inline-flex;background:var(--line);border-radius:10px;padding:3px;margin-bottom:28px;}
