@@ -1,5 +1,7 @@
 import { requireAuth, wireLogout } from "./auth-guard.js";
-import { listenWords, addWord, updateWord, deleteWord } from "./db.js";
+import { auth } from "./firebase-init.js";
+import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile } from "./db.js";
+import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
 const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính từ", Adverb: "Trạng từ", Phrase: "Cụm từ", Idiom: "Thành ngữ" };
@@ -14,6 +16,7 @@ const ICONS = {
 
 let uid = null;
 let allWords = [];
+let userProfile = null;
 let section = "inbox";
 let editingId = null;
 
@@ -23,9 +26,53 @@ init();
 
 async function init() {
   uid = await requireAuth();
-  wireLogout();
+  wireLogout("#logoutMenuBtn");
   wireNav();
+  wireUserMenu();
   listenWords(uid, onWordsChange);
+  listenUserProfile(uid, onProfileChange);
+}
+
+function onProfileChange(profile) {
+  userProfile = profile;
+  paintSidebarAvatar();
+  if (section === "profile") render();
+}
+
+function paintSidebarAvatar() {
+  const img = document.getElementById("sidebarAvatarImg");
+  const fallback = document.getElementById("sidebarAvatarFallback");
+  const nameEl = document.getElementById("sidebarUserName");
+  const email = auth.currentUser?.email || "";
+  const displayName = userProfile?.displayName?.trim();
+  nameEl.textContent = displayName || email || "Tài khoản";
+
+  if (userProfile?.avatar) {
+    img.src = userProfile.avatar;
+    img.style.display = "block";
+    fallback.style.display = "none";
+  } else {
+    img.style.display = "none";
+    fallback.style.display = "flex";
+    fallback.textContent = (displayName || email || "?")[0].toUpperCase();
+  }
+}
+
+function wireUserMenu() {
+  const btn = document.getElementById("avatarBtn");
+  const dropdown = document.getElementById("userDropdown");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target) && e.target !== btn) dropdown.classList.remove("open");
+  });
+  document.getElementById("profileMenuBtn").addEventListener("click", () => {
+    dropdown.classList.remove("open");
+    goto("profile");
+  });
 }
 
 function onWordsChange(words) {
@@ -66,7 +113,7 @@ function render() {
   content.appendChild(wrap);
   const renderers = {
     inbox: renderInbox, flashcard: renderFlashcard, writing: renderWriting,
-    quiz: renderQuiz, progress: renderProgress, add: renderAdd
+    quiz: renderQuiz, progress: renderProgress, add: renderAdd, profile: renderProfile
   };
   (renderers[section] || renderInbox)(wrap);
 }
@@ -635,6 +682,86 @@ function renderAdd(root) {
     saveBtn.classList.add("saved");
     setTimeout(() => { editingId = null; goto("inbox"); }, 700);
   });
+}
+
+/* ============================================================
+   PROFILE — đổi avatar (chọn từ các ảnh tem có sẵn) + tên
+   ============================================================ */
+function renderProfile(root) {
+  const el = document.createElement("div");
+  el.className = "section w-profile";
+  root.appendChild(el);
+
+  const email = auth.currentUser?.email || "";
+  let selectedAvatar = userProfile?.avatar || "";
+  let pickerOpen = false;
+
+  function paint() {
+    const displayName = userProfile?.displayName || "";
+    const initial = (displayName || email || "?")[0].toUpperCase();
+
+    el.innerHTML = `
+      <div class="section-head">
+        <h1>Profile</h1>
+        <p class="lede">Chỉnh sửa ảnh đại diện và tên hiển thị của bạn</p>
+      </div>
+
+      <div class="profile-avatar-row">
+        ${selectedAvatar
+          ? `<img class="profile-avatar-big" src="${escapeAttr(selectedAvatar)}" alt="Avatar">`
+          : `<div class="profile-avatar-big-fallback">${escapeHtml(initial)}</div>`}
+        <button type="button" class="profile-change-avatar-btn" id="changeAvatarBtn">Đổi ảnh đại diện</button>
+      </div>
+
+      ${pickerOpen ? `
+        <div class="avatar-picker scale-in" id="avatarPicker">
+          ${STAMP_FILES.map((src) => `
+            <button type="button" class="avatar-choice ${selectedAvatar === src ? "selected" : ""}" data-src="${escapeAttr(src)}">
+              <img src="${escapeAttr(src)}" alt="">
+            </button>
+          `).join("")}
+        </div>
+      ` : ""}
+
+      <div class="profile-name-panel">
+        <div class="f-field" style="margin-bottom:0;">
+          <label>Tên hiển thị</label>
+          <input type="text" id="fDisplayName" placeholder="Tên của bạn" value="${escapeAttr(displayName)}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="save" id="saveProfileBtn">Lưu thay đổi</button>
+      </div>
+      <div id="savedNote"></div>
+    `;
+
+    el.querySelector("#changeAvatarBtn").addEventListener("click", () => {
+      pickerOpen = !pickerOpen;
+      paint();
+    });
+
+    el.querySelectorAll(".avatar-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedAvatar = btn.dataset.src;
+        paint();
+      });
+    });
+
+    el.querySelector("#saveProfileBtn").addEventListener("click", async () => {
+      const saveBtn = el.querySelector("#saveProfileBtn");
+      const name = el.querySelector("#fDisplayName").value.trim();
+      saveBtn.disabled = true;
+      await updateUserProfile(uid, { displayName: name, avatar: selectedAvatar });
+      saveBtn.disabled = false;
+      saveBtn.textContent = "✓ Đã lưu!";
+      saveBtn.classList.add("saved");
+      el.querySelector("#savedNote").innerHTML = `<div class="toast-inline">Hồ sơ của bạn đã được cập nhật.</div>`;
+      setTimeout(() => { saveBtn.textContent = "Lưu thay đổi"; saveBtn.classList.remove("saved"); }, 1800);
+    });
+  }
+
+  paint();
 }
 
 /* ============================================================
