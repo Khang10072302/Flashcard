@@ -65,12 +65,17 @@ function wireUserMenu() {
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     dropdown.classList.toggle("open");
+    btn.classList.toggle("open", dropdown.classList.contains("open"));
   });
   document.addEventListener("click", (e) => {
-    if (!dropdown.contains(e.target) && e.target !== btn) dropdown.classList.remove("open");
+    if (!dropdown.contains(e.target) && e.target !== btn) {
+      dropdown.classList.remove("open");
+      btn.classList.remove("open");
+    }
   });
   document.getElementById("profileMenuBtn").addEventListener("click", () => {
     dropdown.classList.remove("open");
+    btn.classList.remove("open");
     goto("profile");
   });
 }
@@ -243,6 +248,7 @@ function wordCardHtml(w) {
    FLASHCARD
    ============================================================ */
 function renderFlashcard(root) {
+  root.innerHTML = "";
   const deck = shuffle([...allWords]);
   let index = 0;
   let flipped = false;
@@ -300,12 +306,10 @@ function renderFlashcard(root) {
         </div>
       </div>
 
-      ${flipped ? `
-        <div class="rate-row scale-in">
-          <button class="sbtn again">Chưa nhớ</button>
-          <button class="got-it">Nhớ rồi ✓</button>
-        </div>
-      ` : ""}
+      <div class="rate-row">
+        <button class="sbtn again">Chưa nhớ</button>
+        <button class="got-it">Nhớ rồi ✓</button>
+      </div>
     `;
 
     el.querySelector("#flipCard").addEventListener("click", () => { flipped = !flipped; paint(); });
