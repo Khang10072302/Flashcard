@@ -252,14 +252,16 @@ function renderFlashcard(root) {
   const deck = shuffle([...allWords]);
   let index = 0;
   let flipped = false;
-  const doneIds = [];
+  const reviewedIds = [];
+  let correctCount = 0;
+  let wrongCount = 0;
 
   const el = document.createElement("div");
   el.className = "section w-mid";
   root.appendChild(el);
 
   function paint() {
-    const remaining = deck.filter((w) => !doneIds.includes(w.id));
+    const remaining = deck.filter((w) => !reviewedIds.includes(w.id));
 
     if (allWords.length === 0) {
       el.innerHTML = `<div class="empty-state">Chưa có từ nào. Thêm từ ở "Sổ từ vựng" trước nhé.</div>`;
@@ -271,6 +273,10 @@ function renderFlashcard(root) {
           <div class="emoji">🎉</div>
           <h1>Xong hết rồi!</h1>
           <p>Bạn vừa ôn ${deck.length} thẻ.</p>
+          <div class="done-stats">
+            <div>Bạn đã nhớ <b style="color:var(--green);">${correctCount}</b> thẻ</div>
+            <div>Bạn chưa nhớ <b style="color:var(--red);">${wrongCount}</b> thẻ</div>
+          </div>
           <button class="pbtn" id="reviewAgainBtn" style="margin-top:24px;">Ôn lại</button>
         </div>
       `;
@@ -279,14 +285,14 @@ function renderFlashcard(root) {
     }
 
     const current = remaining[index % remaining.length];
-    const pct = Math.round((doneIds.length / deck.length) * 100);
+    const pct = Math.round((reviewedIds.length / deck.length) * 100);
 
     el.innerHTML = `
       <div class="section-head">
         <h1>Flashcard</h1>
         <div class="progress-row">
           <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
-          <span class="progress-count">${doneIds.length} / ${deck.length}</span>
+          <span class="progress-count">${reviewedIds.length} / ${deck.length}</span>
         </div>
       </div>
 
@@ -321,10 +327,12 @@ function renderFlashcard(root) {
   }
 
   function next(word, knew) {
+    reviewedIds.push(word.id);
     if (knew) {
+      correctCount++;
       updateWord(uid, word.id, { streak: (word.streak || 0) + 1, mastered: (word.streak || 0) + 1 >= 3 });
-      doneIds.push(word.id);
     } else {
+      wrongCount++;
       updateWord(uid, word.id, { streak: 0 });
     }
     flipped = false;
