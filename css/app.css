@@ -121,12 +121,14 @@ input,textarea{font-family:inherit;}
   color:var(--sidebar-text);font-size:13px;font-weight:500;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;
 }
+.user-avatar-btn .chev-arrow{transition:transform .2s ease;}
+.user-avatar-btn.open .chev-arrow{transform:rotate(180deg);}
 
 .user-dropdown{
   position:absolute;bottom:calc(100% + 8px);left:0;right:0;
   background:#2C2C2E;border:1px solid rgba(255,255,255,.1);border-radius:10px;
   padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.45);
-  opacity:0;transform:translateY(-8px);pointer-events:none;
+  opacity:0;transform:translateY(8px);pointer-events:none;
   transition:opacity .18s cubic-bezier(.4,0,.2,1),transform .18s cubic-bezier(.4,0,.2,1);
   z-index:20;
 }
