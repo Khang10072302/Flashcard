@@ -39,7 +39,19 @@
 
       <div class="sidebar-footer">
         <button class="new-word-btn" id="newWordBtn"><span>+</span> Từ mới</button>
-        <button class="logout-link" id="logoutBtn">Đăng xuất</button>
+
+        <div class="user-menu-wrap">
+          <div class="user-dropdown" id="userDropdown">
+            <button class="dropdown-item" id="profileMenuBtn">Profile</button>
+            <button class="dropdown-item" id="logoutMenuBtn">Log out</button>
+          </div>
+          <button class="user-avatar-btn" id="avatarBtn">
+            <img class="user-avatar-img" id="sidebarAvatarImg" alt="Avatar" style="display:none;">
+            <span class="user-avatar-fallback" id="sidebarAvatarFallback">?</span>
+            <span class="user-name" id="sidebarUserName">Đang tải…</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;"><path d="M3 7l3-3 3 3" stroke="#8E8E93" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
       </div>
     </nav>
 

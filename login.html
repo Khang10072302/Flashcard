@@ -60,14 +60,12 @@
   <script type="module">
     import { auth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword }
       from "./js/firebase-init.js";
+    import { createUserProfile } from "./js/db.js";
+    import { STAMP_FILES, randomStamp } from "./js/stamps.js";
 
     let mode = "login"; // hoặc "register"
 
-    // ==== TEM NGẪU NHIÊN ====
-    // Đặt ảnh vào assets/stamps/ với tên: stamp1.png, stamp2.png, stamp3.png ...
-    // (đánh số liên tục, không có số 0 ở đầu). Thêm ảnh mới thì tăng STAMP_COUNT.
-    const STAMP_COUNT = 15;
-    const STAMP_FILES = Array.from({ length: STAMP_COUNT }, (_, i) => `assets/stamps/stamp${i + 1}.png`);
+    // ==== TEM TRANG TRÍ (ngẫu nhiên, chỉ để hiển thị trên phong bì) ====
     const stampImg = document.querySelector(".stamp-img");
     const stampFallback = document.querySelector(".stamp-fallback");
     if (stampImg && STAMP_FILES.length) {
@@ -138,7 +136,8 @@
           if (mode === "login") {
             await signInWithEmailAndPassword(auth, email, password);
           } else {
-            await createUserWithEmailAndPassword(auth, email, password);
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            await createUserProfile(cred.user.uid, { displayName: "", avatar: randomStamp() });
           }
           window.location.href = "index.html";
         } catch (err) {
