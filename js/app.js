@@ -30,6 +30,9 @@ async function init() {
   wireLogout("#logoutMenuBtn");
   wireNav();
   wireUserMenu();
+  wireSidebarToggle();
+  wireMobileMenu();
+  wireBrandIconFallback();
   listenWords(uid, onWordsChange);
   listenUserProfile(uid, onProfileChange);
 }
@@ -81,6 +84,49 @@ function wireUserMenu() {
   });
 }
 
+function wireSidebarToggle() {
+  const sidebar = document.getElementById("sidebar");
+  const collapseBtn = document.getElementById("sidebarToggleBtn");
+  const brandBtn = document.getElementById("brandIconBtn");
+
+  if (localStorage.getItem("sidebarCollapsed") === "1") {
+    sidebar.classList.add("collapsed");
+  }
+
+  collapseBtn.addEventListener("click", () => {
+    sidebar.classList.add("collapsed");
+    localStorage.setItem("sidebarCollapsed", "1");
+  });
+  brandBtn.addEventListener("click", () => {
+    if (sidebar.classList.contains("collapsed")) {
+      sidebar.classList.remove("collapsed");
+      localStorage.setItem("sidebarCollapsed", "0");
+    }
+  });
+}
+
+function wireMobileMenu() {
+  const sidebar = document.getElementById("sidebar");
+  const btn = document.getElementById("mobileMenuBtn");
+
+  function setOpen(isOpen) {
+    sidebar.classList.toggle("mobile-open", isOpen);
+    btn.textContent = isOpen ? "✕" : "☰";
+    document.body.style.overflow = isOpen ? "hidden" : "";
+  }
+  btn.addEventListener("click", () => setOpen(!sidebar.classList.contains("mobile-open")));
+  window.__closeMobileNav = () => setOpen(false);
+}
+
+function wireBrandIconFallback() {
+  const img = document.getElementById("brandIconImg");
+  const fallback = document.getElementById("brandIconFallback");
+  img.addEventListener("error", () => {
+    img.style.display = "none";
+    fallback.style.display = "flex";
+  });
+}
+
 function onWordsChange(words) {
   allWords = words;
   updateSidebarStats();
@@ -100,6 +146,7 @@ function goto(next) {
   document.querySelectorAll(".nav-item[data-section]").forEach((b) => {
     b.classList.toggle("active", b.dataset.section === next);
   });
+  if (window.__closeMobileNav) window.__closeMobileNav();
   render();
 }
 
