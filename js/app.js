@@ -7,6 +7,7 @@ const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
 const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính từ", Adverb: "Trạng từ", Phrase: "Cụm từ", Idiom: "Thành ngữ" };
 
 const ICONS = {
+  dashboard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>`,
   inbox: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h7a1 1 0 011 1v9a1 1 0 01-1 1H3V2z" stroke="currentColor" stroke-width="1.3"/><path d="M10 2h1a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h4M5 7.5h4M5 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
   flashcard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="4.5" y="5.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 1.5"/></svg>`,
   writing: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
@@ -17,7 +18,7 @@ const ICONS = {
 let uid = null;
 let allWords = [];
 let userProfile = null;
-let section = "inbox";
+let section = "dashboard";
 let editingId = null;
 
 const content = document.getElementById("content");
@@ -83,7 +84,7 @@ function wireUserMenu() {
 function onWordsChange(words) {
   allWords = words;
   updateSidebarStats();
-  if (section === "inbox" || section === "progress") render();
+  if (section === "inbox" || section === "progress" || section === "dashboard") render();
 }
 
 function wireNav() {
@@ -117,10 +118,210 @@ function render() {
   wrap.className = "fade-up";
   content.appendChild(wrap);
   const renderers = {
-    inbox: renderInbox, flashcard: renderFlashcard, writing: renderWriting,
+    dashboard: renderDashboard, inbox: renderInbox, flashcard: renderFlashcard, writing: renderWriting,
     quiz: renderQuiz, progress: renderProgress, add: renderAdd, profile: renderProfile
   };
   (renderers[section] || renderInbox)(wrap);
+}
+
+/* ============================================================
+   DASHBOARD — tổng quan: Today's Quest, xem nhanh các mục, lịch học
+   ============================================================ */
+const HEAT_COLORS = ["#EAEDF0", "#BAD5F5", "#5BA4F5", "#1A73E8", "#0071E3"];
+// NOTE: dữ liệu lịch học minh họa (ngẫu nhiên) — chưa gắn với lịch sử học thật theo từng ngày.
+const HEATMAP_DATA = Array.from({ length: 16 * 7 }, () => {
+  const v = Math.random();
+  return v > 0.75 ? 4 : v > 0.55 ? 3 : v > 0.35 ? 2 : v > 0.18 ? 1 : 0;
+});
+
+let dashQuests = [
+  { id: "fc", label: "Ôn Flashcard", target: 2, done: 0, icon: "🃏", color: "#5E5CE6", section: "flashcard" },
+  { id: "wr", label: "Luyện viết", target: 2, done: 0, icon: "✒️", color: "#30D158", section: "writing" },
+  { id: "qz", label: "Hoàn thành Quiz", target: 3, done: 0, icon: "📮", color: "#FF9F0A", section: "quiz" },
+  { id: "vb", label: "Thêm từ mới", target: 1, done: 0, icon: "📖", color: "#0071E3", section: "add" },
+  { id: "mk", label: "Đánh dấu đã thuộc", target: 2, done: 0, icon: "⭐", color: "#FF3B30", section: "inbox" }
+];
+
+function greetingText() {
+  const h = new Date().getHours();
+  if (h < 12) return "Chào buổi sáng";
+  if (h < 18) return "Chào buổi chiều";
+  return "Chào buổi tối";
+}
+
+function monthLabels() {
+  const now = new Date();
+  const labels = [];
+  for (let i = 3; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    labels.push(d.toLocaleDateString("vi-VN", { month: "short" }));
+  }
+  return labels;
+}
+
+function renderDashboard(root) {
+  const el = document.createElement("div");
+  el.className = "section w-dashboard";
+  root.appendChild(el);
+
+  const mastered = allWords.filter((w) => w.mastered).length;
+  const pct = allWords.length ? Math.round((mastered / allWords.length) * 100) : 0;
+  const totalStreak = allWords.reduce((a, w) => a + (w.streak || 0), 0);
+  const recentWords = allWords.slice(0, 3);
+  const topWord = [...allWords].sort((a, b) => (b.streak || 0) - (a.streak || 0))[0];
+
+  function paint() {
+    const totalQ = dashQuests.length;
+    const doneQ = dashQuests.filter((q) => q.done >= q.target).length;
+    const questPct = Math.round((doneQ / totalQ) * 100);
+    const ringLen = 2 * Math.PI * 22;
+
+    el.innerHTML = `
+      <div class="section-head">
+        <h1>${greetingText()} 👋</h1>
+        <p class="lede">${topWord && topWord.streak ? `Streak cao nhất: "${escapeHtml(topWord.word)}" — ${topWord.streak}🔥` : "Bắt đầu học từ đầu tiên của bạn hôm nay."}</p>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-quest">
+          <div class="dash-quest-head">
+            <div>
+              <div class="dash-quest-title"><span class="emoji">⚡</span><span class="txt">Today's Quest</span></div>
+              <div class="dash-quest-sub">${doneQ} / ${totalQ} hoàn thành · ${new Date().toLocaleDateString("vi-VN", { weekday: "long", month: "short", day: "numeric" })}</div>
+            </div>
+            <div class="dash-quest-ring">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="22" fill="none" stroke="var(--line)" stroke-width="4"/>
+                <circle cx="26" cy="26" r="22" fill="none" stroke="var(--blue)" stroke-width="4"
+                  stroke-dasharray="${ringLen}" stroke-dashoffset="${ringLen * (1 - questPct / 100)}"
+                  stroke-linecap="round" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset .5s ease;"/>
+              </svg>
+              <div class="pct">${questPct}%</div>
+            </div>
+          </div>
+          <div class="quest-list">
+            ${dashQuests.map((q) => {
+              const completed = q.done >= q.target;
+              return `
+                <div class="quest-row">
+                  <button class="quest-check ${completed ? "done" : ""}" data-q="${q.id}" style="${completed ? `background:${q.color};` : ""}">${completed ? "✓" : ""}</button>
+                  <span class="quest-icon">${q.icon}</span>
+                  <span class="quest-label ${completed ? "done" : ""}">${escapeHtml(q.label)}</span>
+                  <div class="quest-dots">
+                    ${Array.from({ length: q.target }, (_, i) => `<div class="quest-dot" style="${i < q.done ? `background:${q.color};` : ""}"></div>`).join("")}
+                  </div>
+                  ${!completed ? `<button class="quest-go" data-goto="${q.section}" style="background:${q.color}22;color:${q.color};">Đi →</button>` : ""}
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
+        <button class="dash-card dash-vocab" data-goto="inbox">
+          <div class="dash-card-inner">
+            <div class="dash-card-head">
+              <div class="dash-card-icon" style="background:#0071E31A;color:#0071E3;">${ICONS.inbox}</div>
+            </div>
+            <div class="dash-card-label">Sổ từ vựng</div>
+            <div class="dash-card-desc">${allWords.length} từ</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+              ${recentWords.map((w) => `
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(0,113,227,.1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0071E3;flex-shrink:0;">${escapeHtml((w.word || "?")[0] || "?").toUpperCase()}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(w.word)}</div>
+                    <div style="font-size:11px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(w.meaning || "")}</div>
+                  </div>
+                </div>
+              `).join("")}
+              <div style="margin-top:4px;height:1px;background:var(--line-soft);"></div>
+              <div style="font-size:11px;color:var(--ink-soft);">${mastered} đã thuộc · ${allWords.length - mastered} đang học</div>
+              <div style="height:5px;background:var(--line-soft);border-radius:99px;"><div style="height:100%;border-radius:99px;background:var(--blue);width:${pct}%;"></div></div>
+            </div>
+          </div>
+        </button>
+
+        <button class="dash-card dash-flashcard" data-goto="flashcard">
+          <div class="dash-card-inner">
+            <div class="dash-card-head">
+              <div class="dash-card-icon" style="background:#5E5CE61A;color:#5E5CE6;">${ICONS.flashcard}</div>
+            </div>
+            <div class="dash-card-label">Flashcard</div>
+            <div class="dash-card-desc">${allWords.length - mastered} cần ôn</div>
+          </div>
+        </button>
+
+        <button class="dash-card dash-writing" data-goto="writing">
+          <div class="dash-card-inner">
+            <div class="dash-card-head">
+              <div class="dash-card-icon" style="background:#30D1581A;color:#30D158;">${ICONS.writing}</div>
+            </div>
+            <div class="dash-card-label">Luyện viết</div>
+            <div class="dash-card-desc">Gợi nhớ chủ động</div>
+          </div>
+        </button>
+
+        <button class="dash-card dash-quiz" data-goto="quiz">
+          <div class="dash-card-inner">
+            <div class="dash-card-head">
+              <div class="dash-card-icon" style="background:#FF9F0A1A;color:#FF9F0A;">${ICONS.quiz}</div>
+            </div>
+            <div class="dash-card-label">Quiz</div>
+            <div class="dash-card-desc">Tự kiểm tra</div>
+          </div>
+        </button>
+
+        <button class="dash-card dash-progress" data-goto="progress">
+          <div class="dash-card-inner">
+            <div class="dash-card-head">
+              <div class="dash-card-icon" style="background:#FF3B301A;color:#FF3B30;">${ICONS.progress}</div>
+            </div>
+            <div class="dash-card-label">Tiến độ</div>
+            <div class="dash-card-desc">${pct}% đã thuộc</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="heat-panel">
+        <div class="heat-head">
+          <div>
+            <div class="heat-title">Chuỗi ngày học</div>
+            <div class="heat-sub">${HEATMAP_DATA.filter((v) => v > 0).length} ngày hoạt động trong 16 tuần qua</div>
+          </div>
+          <div class="heat-legend">
+            <span>Ít</span>
+            ${HEAT_COLORS.map((c) => `<div class="heat-swatch" style="background:${c};"></div>`).join("")}
+            <span>Nhiều</span>
+          </div>
+        </div>
+        <div class="heat-months">${monthLabels().map((m) => `<span>${escapeHtml(m)}</span>`).join("")}</div>
+        <div class="heat-body">
+          <div class="heat-days">${["CN", "", "T3", "", "T5", "", "T7"].map((d) => `<span>${d}</span>`).join("")}</div>
+          ${Array.from({ length: 16 }, (_, w) => `
+            <div class="heat-col">
+              ${Array.from({ length: 7 }, (_, d) => {
+                const val = HEATMAP_DATA[w * 7 + d] ?? 0;
+                return `<div class="heat-cell" style="background:${HEAT_COLORS[val]};" title="${val} lần học"></div>`;
+              }).join("")}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+    el.querySelectorAll(".quest-check").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const q = dashQuests.find((x) => x.id === btn.dataset.q);
+        if (q && q.done < q.target) q.done++;
+        paint();
+      });
+    });
+    el.querySelectorAll("[data-goto]").forEach((btn) => {
+      btn.addEventListener("click", () => goto(btn.dataset.goto));
+    });
+  }
+
+  paint();
 }
 
 /* ============================================================
