@@ -145,6 +145,7 @@ input,textarea{font-family:inherit;}
 .main-content{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
 .section{padding:40px 48px;width:100%;box-sizing:border-box;}
 .section.w-inbox,.section.w-progress{max-width:760px;margin:0 auto;}
+.section.w-dashboard{max-width:960px;margin:0 auto;}
 .section.w-mid{max-width:600px;margin:0 auto;}
 .section.w-writing{max-width:680px;margin:0 auto;}
 .section.w-quiz{max-width:560px;margin:0 auto;}
@@ -389,6 +390,89 @@ input,textarea{font-family:inherit;}
 .form-actions .cancel{padding:13px 22px;border-radius:12px;border:1px solid var(--line);cursor:pointer;background:var(--bg);color:var(--ink-soft);font-size:15px;font-weight:500;font-family:inherit;}
 
 .loading-note{padding:60px;text-align:center;color:var(--ink-soft);font-size:14px;}
+
+/* ---------- dashboard ---------- */
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+
+/* Today's Quest — nền TRẮNG (bản Figma gốc nền đen, đổi theo yêu cầu) */
+.dash-quest{
+  grid-column:1/3;grid-row:1/2;
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:26px 28px;box-shadow:0 8px 24px rgba(0,0,0,.06);
+}
+.dash-quest-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.dash-quest-title{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.dash-quest-title .emoji{font-size:18px;}
+.dash-quest-title .txt{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.4px;}
+.dash-quest-sub{font-size:12px;color:var(--ink-soft);}
+.dash-quest-ring{position:relative;width:52px;height:52px;flex-shrink:0;}
+.dash-quest-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink);}
+
+.quest-list{display:flex;flex-direction:column;gap:10px;}
+.quest-row{display:flex;align-items:center;gap:12px;}
+.quest-check{
+  width:22px;height:22px;border-radius:6px;flex-shrink:0;
+  background:var(--bg);border:1.5px solid var(--line);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:#fff;transition:all .2s;font-family:inherit;
+}
+.quest-check.done{cursor:default;}
+.quest-icon{font-size:14px;}
+.quest-label{flex:1;font-size:13px;font-weight:500;color:var(--ink);}
+.quest-label.done{color:var(--ink-dim);text-decoration:line-through;}
+.quest-dots{display:flex;gap:4px;align-items:center;}
+.quest-dot{width:8px;height:8px;border-radius:50%;background:var(--line-soft);}
+.quest-go{padding:4px 10px;border-radius:6px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* Các thẻ xem nhanh (Vocabulary/Flashcard/Writing/Quiz/Progress) */
+.dash-card{
+  background:#fff;border-radius:18px;border:1px solid var(--line);
+  box-shadow:0 2px 6px rgba(0,0,0,.04);overflow:hidden;
+  display:flex;flex-direction:column;cursor:pointer;text-align:left;padding:0;
+  font-family:inherit;transition:transform .15s ease,box-shadow .15s ease;
+}
+.dash-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
+.dash-card-inner{padding:18px 20px;flex:1;display:flex;flex-direction:column;}
+.dash-card-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.dash-card-label{font-size:14px;font-weight:600;color:var(--ink);margin-top:10px;}
+.dash-card-desc{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+
+.dash-vocab{grid-column:3/4;grid-row:1/3;}
+.dash-flashcard{grid-column:1/2;grid-row:2/3;}
+.dash-writing{grid-column:2/3;grid-row:2/3;}
+.dash-quiz{grid-column:1/3;grid-row:3/4;}
+.dash-progress{grid-column:3/4;grid-row:3/4;}
+
+@media (max-width:900px){
+  .dash-grid{grid-template-columns:1fr 1fr;}
+  .dash-quest,.dash-vocab,.dash-quiz,.dash-progress{grid-column:1/3;grid-row:auto;}
+  .dash-flashcard,.dash-writing{grid-row:auto;}
+}
+@media (max-width:640px){
+  .dash-grid{grid-template-columns:1fr;}
+  .dash-quest,.dash-vocab,.dash-flashcard,.dash-writing,.dash-quiz,.dash-progress{grid-column:1/2;}
+}
+
+/* Lịch học (heatmap) */
+.heat-panel{background:#fff;border-radius:18px;border:1px solid var(--line);padding:24px 28px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.heat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.heat-title{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.3px;}
+.heat-sub{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+.heat-legend{display:flex;align-items:center;gap:5px;}
+.heat-legend span{font-size:11px;color:var(--ink-soft);}
+.heat-swatch{width:12px;height:12px;border-radius:3px;}
+.heat-months{display:flex;padding-left:26px;margin-bottom:4px;}
+.heat-months span{flex:1;font-size:11px;color:var(--ink-soft);font-weight:500;}
+.heat-body{display:flex;gap:4px;}
+.heat-days{display:flex;flex-direction:column;gap:3px;margin-right:6px;}
+.heat-days span{height:14px;font-size:10px;color:var(--ink-soft);line-height:14px;}
+.heat-col{display:flex;flex-direction:column;gap:3px;}
+.heat-cell{width:14px;height:14px;border-radius:3px;transition:transform .1s;cursor:default;}
+.heat-cell:hover{transform:scale(1.3);}
+@media (max-width:640px){
+  .heat-months,.heat-days{display:none;}
+  .heat-body{overflow-x:auto;}
+}
 
 /* ---------- profile (edit profile, kiểu Pinterest) ---------- */
 .section.w-profile{max-width:560px;margin:0 auto;}
