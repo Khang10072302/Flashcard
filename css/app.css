@@ -58,7 +58,7 @@ input,textarea{font-family:inherit;}
   transition:width .22s cubic-bezier(.4,0,.2,1);
   overflow:hidden;
 }
-.sidebar.collapsed{width:82px;}
+.sidebar.collapsed{width:68px;}
 
 .sidebar-header{padding:22px 20px 20px;}
 .sidebar.collapsed .sidebar-header{padding:22px 0 20px;}
