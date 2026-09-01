@@ -3,19 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sổ Từ Vựng</title>
+<title>Lexi — Sổ Từ Vựng</title>
+<link rel="icon" type="image/png" href="assets/app-icon.png">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app-body">
+  <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Mở menu">☰</button>
+
   <div class="app-shell">
-    <nav class="sidebar">
+    <nav class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand">
-          <div class="icon">📖</div>
-          <div>
-            <div class="name">Sổ Từ Vựng</div>
+          <button class="brand-icon-btn" id="brandIconBtn" type="button" title="Mở rộng menu">
+            <img class="brand-icon-img" id="brandIconImg" src="assets/app-icon.png" alt="Lexi">
+            <span class="brand-icon-fallback" id="brandIconFallback" style="display:none;">📖</span>
+            <span class="brand-icon-hover-toggle">
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><line x1="7" y1="3" x2="7" y2="15" stroke="currentColor" stroke-width="1.4"/></svg>
+            </span>
+          </button>
+          <div class="brand-text">
+            <div class="name">Lexi</div>
             <div class="sub" id="wordCountSub">— từ</div>
           </div>
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn" type="button" title="Thu gọn menu">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><line x1="7" y1="3" x2="7" y2="15" stroke="currentColor" stroke-width="1.4"/></svg>
+          </button>
         </div>
       </div>
 
@@ -30,16 +42,16 @@
 
       <div class="sidebar-nav">
         <div class="nav-section-label">HỌC TẬP</div>
-        <button class="nav-item active" data-section="dashboard"><span class="ico"></span>Dashboard</button>
-        <button class="nav-item" data-section="inbox"><span class="ico"></span>Sổ từ vựng</button>
-        <button class="nav-item" data-section="flashcard"><span class="ico"></span>Flashcard</button>
-        <button class="nav-item" data-section="writing"><span class="ico"></span>Luyện viết</button>
-        <button class="nav-item" data-section="quiz"><span class="ico"></span>Quiz</button>
-        <button class="nav-item" data-section="progress"><span class="ico"></span>Tiến độ</button>
+        <button class="nav-item active" data-section="dashboard"><span class="ico"></span><span class="label-text">Dashboard</span></button>
+        <button class="nav-item" data-section="inbox"><span class="ico"></span><span class="label-text">Sổ từ vựng</span></button>
+        <button class="nav-item" data-section="flashcard"><span class="ico"></span><span class="label-text">Flashcard</span></button>
+        <button class="nav-item" data-section="writing"><span class="ico"></span><span class="label-text">Luyện viết</span></button>
+        <button class="nav-item" data-section="quiz"><span class="ico"></span><span class="label-text">Quiz</span></button>
+        <button class="nav-item" data-section="progress"><span class="ico"></span><span class="label-text">Tiến độ</span></button>
       </div>
 
       <div class="sidebar-footer">
-        <button class="new-word-btn" id="newWordBtn"><span>+</span> Từ mới</button>
+        <button class="new-word-btn" id="newWordBtn"><span class="new-word-icon">+</span><span class="label-text">Từ mới</span></button>
 
         <div class="user-menu-wrap">
           <div class="user-dropdown" id="userDropdown">
@@ -49,8 +61,8 @@
           <button class="user-avatar-btn" id="avatarBtn">
             <img class="user-avatar-img" id="sidebarAvatarImg" alt="Avatar" style="display:none;">
             <span class="user-avatar-fallback" id="sidebarAvatarFallback">?</span>
-            <span class="user-name" id="sidebarUserName">Đang tải…</span>
-            <svg class="chev-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;"><path d="M3 7l3-3 3 3" stroke="#8E8E93" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="user-name label-text" id="sidebarUserName">Đang tải…</span>
+            <svg class="chev-arrow label-text" width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;"><path d="M3 7l3-3 3 3" stroke="#8E8E93" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </div>
