@@ -153,7 +153,7 @@ function goto(next) {
 function updateSidebarStats() {
   const mastered = allWords.filter((w) => w.mastered).length;
   const pct = allWords.length ? Math.round((mastered / allWords.length) * 100) : 0;
-  document.getElementById("wordCountSub").textContent = `${allWords.length} từ`;
+  // (đã bỏ dòng "X từ" dưới tên app theo yêu cầu)
   document.getElementById("sidebarPct").textContent = `${pct}%`;
   document.getElementById("sidebarFill").style.width = `${pct}%`;
   document.getElementById("sidebarNote").textContent = `${mastered} / ${allWords.length} đã thuộc`;
