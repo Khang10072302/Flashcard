@@ -129,7 +129,6 @@ function wireBrandIconFallback() {
 
 function onWordsChange(words) {
   allWords = words;
-  updateSidebarStats();
   if (section === "inbox" || section === "progress" || section === "dashboard") render();
 }
 
@@ -148,15 +147,6 @@ function goto(next) {
   });
   if (window.__closeMobileNav) window.__closeMobileNav();
   render();
-}
-
-function updateSidebarStats() {
-  const mastered = allWords.filter((w) => w.mastered).length;
-  const pct = allWords.length ? Math.round((mastered / allWords.length) * 100) : 0;
-  // (đã bỏ dòng "X từ" dưới tên app theo yêu cầu)
-  document.getElementById("sidebarPct").textContent = `${pct}%`;
-  document.getElementById("sidebarFill").style.width = `${pct}%`;
-  document.getElementById("sidebarNote").textContent = `${mastered} / ${allWords.length} đã thuộc`;
 }
 
 function render() {
