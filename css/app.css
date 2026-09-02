@@ -279,12 +279,10 @@ input,textarea{font-family:inherit;}
 .chev.rot{transform:rotate(180deg);}
 
 .word-card-body{padding:0 20px 20px;border-top:1px solid var(--line-soft);}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
-@media (max-width:520px){.info-grid{grid-template-columns:1fr;}}
-.info-card{background:var(--bg);border-radius:10px;padding:12px 14px;}
-.info-card .lbl{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase;}
-.info-card .val{font-size:13px;color:var(--ink);line-height:1.5;}
-.info-card .val.italic{font-style:italic;}
+.detail-block{margin-top:14px;}
+.detail-label{font-size:11px;font-weight:600;color:var(--ink-soft);letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px;}
+.detail-value{font-size:14px;color:var(--ink);line-height:1.55;}
+.detail-value.italic{font-style:italic;color:var(--ink-soft);}
 .word-card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
 .word-card-foot .added{font-size:12px;color:var(--ink-soft);}
 .word-card-foot-actions{display:flex;gap:8px;}
