@@ -476,10 +476,15 @@ function wordCardHtml(w) {
       </button>
       ${isExpanded ? `
         <div class="word-card-body scale-in">
-          <div class="info-grid">
-            <div class="info-card"><div class="lbl">Nghĩa</div><div class="val">${escapeHtml(w.meaning || "")}</div></div>
-            <div class="info-card"><div class="lbl">Ví dụ</div><div class="val italic">${w.example ? `"${escapeHtml(w.example)}"` : "—"}</div></div>
+          <div class="detail-block">
+            <div class="detail-label">Nghĩa</div>
+            <div class="detail-value">${escapeHtml(w.meaning || "")}</div>
           </div>
+          ${w.example ? `
+          <div class="detail-block">
+            <div class="detail-label">Ví dụ</div>
+            <div class="detail-value italic">"${escapeHtml(w.example)}"</div>
+          </div>` : ""}
           <div class="word-card-foot">
             <span class="added">Thêm ${formatDate(w.addedAt)}</span>
             <div class="word-card-foot-actions">
