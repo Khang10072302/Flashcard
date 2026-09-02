@@ -196,6 +196,38 @@ function monthLabels() {
   return labels;
 }
 
+// Dùng chung cho Dashboard ("Chuỗi ngày học") và trang Tiến độ — cùng 1 dữ liệu,
+// cùng 1 giao diện, để 2 nơi luôn khớp nhau (Dashboard chỉ là bản xem nhanh của Tiến độ).
+function heatmapPanelHtml() {
+  return `
+    <div class="heat-panel">
+      <div class="heat-head">
+        <div>
+          <div class="heat-title">Chuỗi ngày học</div>
+          <div class="heat-sub">${HEATMAP_DATA.filter((v) => v > 0).length} ngày hoạt động trong 16 tuần qua</div>
+        </div>
+        <div class="heat-legend">
+          <span>Ít</span>
+          ${HEAT_COLORS.map((c) => `<div class="heat-swatch" style="background:${c};"></div>`).join("")}
+          <span>Nhiều</span>
+        </div>
+      </div>
+      <div class="heat-months">${monthLabels().map((m) => `<span>${escapeHtml(m)}</span>`).join("")}</div>
+      <div class="heat-body">
+        <div class="heat-days">${["CN", "", "T3", "", "T5", "", "T7"].map((d) => `<span>${d}</span>`).join("")}</div>
+        ${Array.from({ length: 16 }, (_, w) => `
+          <div class="heat-col">
+            ${Array.from({ length: 7 }, (_, d) => {
+              const val = HEATMAP_DATA[w * 7 + d] ?? 0;
+              return `<div class="heat-cell" style="background:${HEAT_COLORS[val]};" title="${val} lần học"></div>`;
+            }).join("")}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderDashboard(root) {
   const el = document.createElement("div");
   el.className = "section w-dashboard";
@@ -319,31 +351,7 @@ function renderDashboard(root) {
         </button>
       </div>
 
-      <div class="heat-panel">
-        <div class="heat-head">
-          <div>
-            <div class="heat-title">Chuỗi ngày học</div>
-            <div class="heat-sub">${HEATMAP_DATA.filter((v) => v > 0).length} ngày hoạt động trong 16 tuần qua</div>
-          </div>
-          <div class="heat-legend">
-            <span>Ít</span>
-            ${HEAT_COLORS.map((c) => `<div class="heat-swatch" style="background:${c};"></div>`).join("")}
-            <span>Nhiều</span>
-          </div>
-        </div>
-        <div class="heat-months">${monthLabels().map((m) => `<span>${escapeHtml(m)}</span>`).join("")}</div>
-        <div class="heat-body">
-          <div class="heat-days">${["CN", "", "T3", "", "T5", "", "T7"].map((d) => `<span>${d}</span>`).join("")}</div>
-          ${Array.from({ length: 16 }, (_, w) => `
-            <div class="heat-col">
-              ${Array.from({ length: 7 }, (_, d) => {
-                const val = HEATMAP_DATA[w * 7 + d] ?? 0;
-                return `<div class="heat-cell" style="background:${HEAT_COLORS[val]};" title="${val} lần học"></div>`;
-              }).join("")}
-            </div>
-          `).join("")}
-        </div>
-      </div>
+      ${heatmapPanelHtml()}
     `;
 
     el.querySelectorAll(".quest-check").forEach((btn) => {
@@ -432,11 +440,12 @@ function renderInbox(root) {
           updateWord(uid, id, { mastered: !w.mastered });
         });
       }
-      const delBtn = card.querySelector(".word-card-delete");
-      if (delBtn) {
-        delBtn.addEventListener("click", (e) => {
+      const editBtn = card.querySelector(".edit-word-btn");
+      if (editBtn) {
+        editBtn.addEventListener("click", (e) => {
           e.stopPropagation();
-          if (confirm(`Xóa "${card.dataset.word}" khỏi sổ từ?`)) deleteWord(uid, id);
+          const w = allWords.find((x) => x.id === id);
+          openEditWordModal(w);
         });
       }
     });
@@ -462,7 +471,6 @@ function wordCardHtml(w) {
         </div>
         <div class="word-card-right">
           ${w.streak ? `<span class="streak-badge">🔥${w.streak}</span>` : ""}
-          <button class="word-card-delete" type="button" title="Xóa">✕</button>
           <svg class="chev ${isExpanded ? "rot" : ""}" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="#C7C7CC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
       </button>
@@ -474,12 +482,103 @@ function wordCardHtml(w) {
           </div>
           <div class="word-card-foot">
             <span class="added">Thêm ${formatDate(w.addedAt)}</span>
-            <button class="mastered-toggle ${w.mastered ? "is-mastered" : ""}">${w.mastered ? "Bỏ đánh dấu" : "Đánh dấu đã thuộc"}</button>
+            <div class="word-card-foot-actions">
+              <button class="edit-word-btn" type="button">Sửa</button>
+              <button class="mastered-toggle ${w.mastered ? "is-mastered" : ""}" type="button">${w.mastered ? "Bỏ đánh dấu" : "Đánh dấu đã thuộc"}</button>
+            </div>
           </div>
         </div>
       ` : ""}
     </div>
   `;
+}
+
+/* ============================================================
+   MODAL SỬA TỪ — giống thiết kế mẫu (không đổi ngày "Thêm",
+   nút Xóa nằm trong modal này thay vì ở thẻ ngoài)
+   ============================================================ */
+function openEditWordModal(word) {
+  const root = document.getElementById("modalRoot");
+  let selectedTag = word.tag || "Noun";
+
+  root.innerHTML = `
+    <div class="modal-backdrop" id="editBackdrop">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>Sửa từ</h2>
+          <button class="modal-close" id="modalCloseBtn" type="button">✕</button>
+        </div>
+        <div class="f-field">
+          <label>Từ *</label>
+          <input type="text" id="editWordInput" class="large" value="${escapeAttr(word.word)}">
+        </div>
+        <div class="f-field">
+          <label>Phiên âm</label>
+          <input type="text" id="editPhoneticInput" value="${escapeAttr(word.phonetic || "")}">
+        </div>
+        <div class="f-field">
+          <label>Nghĩa *</label>
+          <input type="text" id="editMeaningInput" value="${escapeAttr(word.meaning || "")}">
+        </div>
+        <div class="f-field">
+          <label>Câu ví dụ</label>
+          <input type="text" id="editExampleInput" value="${escapeAttr(word.example || "")}">
+        </div>
+        <div class="f-field">
+          <label>Loại từ</label>
+          <div class="tag-picker" id="editTagPicker">
+            ${TAGS.map((t) => `<button type="button" class="tag-choice ${t === selectedTag ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+          </div>
+        </div>
+        <div class="modal-meta">Thêm ${formatDate(word.addedAt)} · ngày sẽ không thay đổi</div>
+        <div class="form-actions">
+          <button class="save" id="editSaveBtn" type="button">Lưu thay đổi</button>
+          <button class="cancel" id="editCancelBtn" type="button">Hủy</button>
+        </div>
+        <button class="modal-delete-link" id="editDeleteBtn" type="button">Xóa từ này</button>
+      </div>
+    </div>
+  `;
+
+  const backdrop = document.getElementById("editBackdrop");
+  requestAnimationFrame(() => backdrop.classList.add("open"));
+
+  function close() {
+    backdrop.classList.remove("open");
+    setTimeout(() => { root.innerHTML = ""; }, 180);
+  }
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  document.getElementById("modalCloseBtn").addEventListener("click", close);
+  document.getElementById("editCancelBtn").addEventListener("click", close);
+
+  root.querySelectorAll(".tag-choice").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedTag = btn.dataset.t;
+      root.querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+  });
+
+  document.getElementById("editSaveBtn").addEventListener("click", async () => {
+    const newWord = document.getElementById("editWordInput").value.trim();
+    const newMeaning = document.getElementById("editMeaningInput").value.trim();
+    if (!newWord || !newMeaning) return;
+    await updateWord(uid, word.id, {
+      word: newWord,
+      phonetic: document.getElementById("editPhoneticInput").value.trim(),
+      meaning: newMeaning,
+      example: document.getElementById("editExampleInput").value.trim(),
+      tag: selectedTag
+    });
+    close();
+  });
+
+  document.getElementById("editDeleteBtn").addEventListener("click", async () => {
+    if (confirm(`Xóa "${word.word}" khỏi sổ từ?`)) {
+      await deleteWord(uid, word.id);
+      close();
+    }
+  });
 }
 
 /* ============================================================
@@ -793,10 +892,6 @@ function renderProgress(root) {
   const pct = allWords.length ? Math.round((mastered / allWords.length) * 100) : 0;
   const totalStreak = allWords.reduce((a, w) => a + (w.streak || 0), 0);
 
-  const now = new Date();
-  const monthLabel = now.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-
   const topStreak = [...allWords].sort((a, b) => (b.streak || 0) - (a.streak || 0)).slice(0, 5);
 
   el.innerHTML = `
@@ -837,22 +932,7 @@ function renderProgress(root) {
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Lịch học — ${escapeHtml(monthLabel)}</div>
-      <div class="heatmap-grid">
-        ${Array.from({ length: daysInMonth }, (_, i) => {
-          const v = Math.random();
-          const bg = v > 0.7 ? "var(--blue)" : v > 0.4 ? "#34AADC88" : v > 0.15 ? "var(--line)" : "var(--line-soft)";
-          return `<div class="heatmap-cell" style="background:${bg};" title="Ngày ${i + 1}"></div>`;
-        }).join("")}
-      </div>
-      <div class="heatmap-legend">
-        <div class="item"><span class="swatch" style="background:var(--line-soft);"></span><span>Không học</span></div>
-        <div class="item"><span class="swatch" style="background:var(--line);"></span><span>Ít</span></div>
-        <div class="item"><span class="swatch" style="background:#34AADC88;"></span><span>Vừa</span></div>
-        <div class="item"><span class="swatch" style="background:var(--blue);"></span><span>Nhiều</span></div>
-      </div>
-    </div>
+    ${heatmapPanelHtml()}
   `;
 }
 
