@@ -60,10 +60,10 @@ input,textarea{font-family:inherit;}
 }
 .sidebar.collapsed{width:68px;}
 
-.sidebar-header{padding:22px 20px 20px; min-width:0; width: 100%;}
-.sidebar.collapsed .sidebar-header{padding:22px 0 20px; width:100%;}
+.sidebar-header{padding:22px 20px 20px; width: 100%; min-width:0;}
+.sidebar.collapsed .sidebar-header{padding:22px 0 20px; width:68px; min-width:68px; display:flex; justify-content:center;}
 .sidebar-brand{display:flex;align-items:center;gap:10px; width:100%; min-width:0;}
-.sidebar.collapsed .sidebar-brand{justify-content:center;}
+.sidebar.collapsed .sidebar-brand{width:68px; min-width:68px; justify-content:center;}
 
 .brand-icon-btn{
   position:relative;width:40px;height:40px;border-radius:10px;flex-shrink:0;
