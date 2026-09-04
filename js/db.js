@@ -1,6 +1,6 @@
 import {
   db, collection, doc, addDoc, updateDoc, deleteDoc, getDoc, setDoc,
-  onSnapshot, query, orderBy, serverTimestamp
+  onSnapshot, query, orderBy, serverTimestamp, increment
 } from "./firebase-init.js";
 
 function wordsRef(uid) {
@@ -29,6 +29,12 @@ export function addWord(uid, data) {
     tag: data.tag || "Noun",
     mastered: false,
     streak: 0,
+    flashcardSeen: 0,
+    flashcardCorrect: 0,
+    flashcardWrong: 0,
+    writingSeen: 0,
+    writingCorrect: 0,
+    writingWrong: 0,
     addedAt: serverTimestamp()
   });
 }
@@ -39,6 +45,24 @@ export function updateWord(uid, wordId, patch) {
 
 export function deleteWord(uid, wordId) {
   return deleteDoc(doc(db, "users", uid, "words", wordId));
+}
+
+// Ghi lại 1 lần ôn Flashcard: luôn +1 "đã học", cộng thêm +1 "thuộc" hoặc "quên".
+export function recordFlashcardResult(uid, wordId, knew) {
+  return updateDoc(doc(db, "users", uid, "words", wordId), {
+    flashcardSeen: increment(1),
+    flashcardCorrect: increment(knew ? 1 : 0),
+    flashcardWrong: increment(knew ? 0 : 1)
+  });
+}
+
+// Ghi lại 1 lần kiểm tra ở chế độ "Điền từ" của Luyện viết.
+export function recordWritingResult(uid, wordId, correct) {
+  return updateDoc(doc(db, "users", uid, "words", wordId), {
+    writingSeen: increment(1),
+    writingCorrect: increment(correct ? 1 : 0),
+    writingWrong: increment(correct ? 0 : 1)
+  });
 }
 
 /* ---------- hồ sơ người dùng (Profile) ---------- */
