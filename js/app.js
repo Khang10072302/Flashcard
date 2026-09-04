@@ -1,6 +1,6 @@
 import { requireAuth, wireLogout } from "./auth-guard.js";
 import { auth } from "./firebase-init.js";
-import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile } from "./db.js";
+import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult } from "./db.js";
 import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
@@ -487,6 +487,18 @@ function wordCardHtml(w) {
               <div class="detail-value italic">"${escapeHtml(w.example)}"</div>
             </div>` : ""}
           </div>
+
+          <div class="practice-stats">
+            <div class="practice-stat-row">
+              <span class="practice-stat-icon">🃏</span>
+              <span class="practice-stat-text">Flashcard: đã học <b>${w.flashcardSeen || 0}</b> lần · thuộc <b class="ok">${w.flashcardCorrect || 0}</b> · quên <b class="no">${w.flashcardWrong || 0}</b></span>
+            </div>
+            <div class="practice-stat-row">
+              <span class="practice-stat-icon">✒️</span>
+              <span class="practice-stat-text">Luyện viết: đã làm <b>${w.writingSeen || 0}</b> lần · đúng <b class="ok">${w.writingCorrect || 0}</b> · sai <b class="no">${w.writingWrong || 0}</b></span>
+            </div>
+          </div>
+
           <div class="word-card-foot">
             <span class="added">Thêm ${formatDate(w.addedAt)}</span>
             <div class="word-card-foot-actions">
@@ -672,6 +684,7 @@ function renderFlashcard(root) {
 
   function next(word, knew) {
     reviewedIds.push(word.id);
+    recordFlashcardResult(uid, word.id, knew);
     if (knew) {
       correctCount++;
       updateWord(uid, word.id, { streak: (word.streak || 0) + 1, mastered: (word.streak || 0) + 1 >= 3 });
@@ -774,6 +787,7 @@ function renderWriting(root) {
         const val = (input.value || "").trim().toLowerCase();
         correct = val === current.word.trim().toLowerCase();
         checked = true;
+        recordWritingResult(uid, current.id, correct);
         if (correct) updateWord(uid, current.id, { streak: (current.streak || 0) + 1 });
         paint();
       }
