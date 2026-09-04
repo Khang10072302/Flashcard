@@ -236,7 +236,6 @@ function renderDashboard(root) {
   const mastered = allWords.filter((w) => w.mastered).length;
   const pct = allWords.length ? Math.round((mastered / allWords.length) * 100) : 0;
   const totalStreak = allWords.reduce((a, w) => a + (w.streak || 0), 0);
-  const recentWords = allWords.slice(0, 3);
   const topWord = [...allWords].sort((a, b) => (b.streak || 0) - (a.streak || 0))[0];
 
   function paint() {
@@ -287,25 +286,25 @@ function renderDashboard(root) {
         </div>
 
         <button class="dash-card dash-vocab" data-goto="inbox">
-          <div class="dash-card-inner">
-            <div class="dash-card-head">
-              <div class="dash-card-icon" style="background:#0071E31A;color:#0071E3;">${ICONS.inbox}</div>
+          <div class="vocab-stat-row">
+            <div class="vocab-stat-icon" style="background:#0071E31A;color:#0071E3;">📖</div>
+            <div class="vocab-stat-body">
+              <div class="vocab-stat-label">Tổng số từ</div>
+              <div class="vocab-stat-num" style="color:#0071E3;">${allWords.length}</div>
             </div>
-            <div class="dash-card-label">Sổ từ vựng</div>
-            <div class="dash-card-desc">${allWords.length} từ</div>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-              ${recentWords.map((w) => `
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(0,113,227,.1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0071E3;flex-shrink:0;">${escapeHtml((w.word || "?")[0] || "?").toUpperCase()}</div>
-                  <div style="flex:1;min-width:0;">
-                    <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(w.word)}</div>
-                    <div style="font-size:11px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(w.meaning || "")}</div>
-                  </div>
-                </div>
-              `).join("")}
-              <div style="margin-top:4px;height:1px;background:var(--line-soft);"></div>
-              <div style="font-size:11px;color:var(--ink-soft);">${mastered} đã thuộc · ${allWords.length - mastered} đang học</div>
-              <div style="height:5px;background:var(--line-soft);border-radius:99px;"><div style="height:100%;border-radius:99px;background:var(--blue);width:${pct}%;"></div></div>
+          </div>
+          <div class="vocab-stat-row">
+            <div class="vocab-stat-icon" style="background:#30D1581A;color:#30D158;">✓</div>
+            <div class="vocab-stat-body">
+              <div class="vocab-stat-label">Đã thuộc</div>
+              <div class="vocab-stat-num" style="color:#30D158;">${mastered}</div>
+            </div>
+          </div>
+          <div class="vocab-stat-row">
+            <div class="vocab-stat-icon" style="background:#FF9F0A1A;color:#FF9F0A;">⏳</div>
+            <div class="vocab-stat-body">
+              <div class="vocab-stat-label">Chưa thuộc</div>
+              <div class="vocab-stat-num" style="color:#FF9F0A;">${allWords.length - mastered}</div>
             </div>
           </div>
         </button>
