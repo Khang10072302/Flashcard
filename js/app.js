@@ -489,13 +489,27 @@ function wordCardHtml(w) {
           </div>
 
           <div class="practice-stats">
-            <div class="practice-stat-row">
-              <span class="practice-stat-icon">🃏</span>
-              <span class="practice-stat-text">Flashcard: đã học <b>${w.flashcardSeen || 0}</b> lần · thuộc <b class="ok">${w.flashcardCorrect || 0}</b> · quên <b class="no">${w.flashcardWrong || 0}</b></span>
+            <div class="practice-stat-card">
+              <div class="practice-stat-icon" style="background:#5E5CE61A;color:#5E5CE6;">🃏</div>
+              <div class="practice-stat-body">
+                <div class="practice-stat-title">Flashcard</div>
+                <div class="practice-stat-numbers">
+                  <span class="ps-num">Đã học<b>${w.flashcardSeen || 0}</b></span>
+                  <span class="ps-num ok">Thuộc<b>${w.flashcardCorrect || 0}</b></span>
+                  <span class="ps-num no">Quên<b>${w.flashcardWrong || 0}</b></span>
+                </div>
+              </div>
             </div>
-            <div class="practice-stat-row">
-              <span class="practice-stat-icon">✒️</span>
-              <span class="practice-stat-text">Luyện viết: đã làm <b>${w.writingSeen || 0}</b> lần · đúng <b class="ok">${w.writingCorrect || 0}</b> · sai <b class="no">${w.writingWrong || 0}</b></span>
+            <div class="practice-stat-card">
+              <div class="practice-stat-icon" style="background:#30D1581A;color:#30D158;">✒️</div>
+              <div class="practice-stat-body">
+                <div class="practice-stat-title">Luyện viết</div>
+                <div class="practice-stat-numbers">
+                  <span class="ps-num">Đã làm<b>${w.writingSeen || 0}</b></span>
+                  <span class="ps-num ok">Đúng<b>${w.writingCorrect || 0}</b></span>
+                  <span class="ps-num no">Sai<b>${w.writingWrong || 0}</b></span>
+                </div>
+              </div>
             </div>
           </div>
 
