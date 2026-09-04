@@ -288,6 +288,17 @@ input,textarea{font-family:inherit;}
 .detail-label{font-size:11px;font-weight:600;color:var(--ink-soft);letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px;}
 .detail-value{font-size:14px;color:var(--ink);line-height:1.55;}
 .detail-value.italic{font-style:italic;color:var(--ink-soft);}
+
+.practice-stats{
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:6px;
+}
+.practice-stat-row{display:flex;align-items:baseline;gap:8px;}
+.practice-stat-icon{font-size:13px;flex-shrink:0;}
+.practice-stat-text{font-size:12.5px;color:var(--ink-soft);}
+.practice-stat-text b{color:var(--ink);font-weight:600;}
+.practice-stat-text b.ok{color:var(--green);}
+.practice-stat-text b.no{color:var(--red);}
 .word-card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
 .word-card-foot .added{font-size:12px;color:var(--ink-soft);}
 .word-card-foot-actions{display:flex;gap:8px;}
