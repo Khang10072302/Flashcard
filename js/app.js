@@ -456,6 +456,12 @@ function renderInbox(root) {
 
 function wordCardHtml(w) {
   const isExpanded = expandedId === w.id;
+  const fcTotal = (w.flashcardCorrect || 0) + (w.flashcardWrong || 0);
+  const fcOkPct = fcTotal ? Math.round(((w.flashcardCorrect || 0) / fcTotal) * 100) : 0;
+  const fcNoPct = fcTotal ? 100 - fcOkPct : 0;
+  const wrTotal = (w.writingCorrect || 0) + (w.writingWrong || 0);
+  const wrOkPct = wrTotal ? Math.round(((w.writingCorrect || 0) / wrTotal) * 100) : 0;
+  const wrNoPct = wrTotal ? 100 - wrOkPct : 0;
   return `
     <div class="word-card" data-id="${w.id}" data-word="${escapeAttr(w.word)}">
       <button class="word-card-head" type="button">
@@ -488,11 +494,16 @@ function wordCardHtml(w) {
             </div>` : ""}
           </div>
 
+          <div class="stats-heading">Thống kê</div>
           <div class="practice-stats">
             <div class="practice-stat-card">
               <div class="practice-stat-icon" style="background:#5E5CE61A;color:#5E5CE6;">🃏</div>
               <div class="practice-stat-body">
                 <div class="practice-stat-title">Flashcard</div>
+                <div class="ps-bar">
+                  <div class="ps-bar-ok" style="width:${fcOkPct}%;"></div>
+                  <div class="ps-bar-no" style="width:${fcNoPct}%;"></div>
+                </div>
                 <div class="practice-stat-numbers">
                   <span class="ps-num">Đã học<b>${w.flashcardSeen || 0}</b></span>
                   <span class="ps-num ok">Thuộc<b>${w.flashcardCorrect || 0}</b></span>
@@ -504,11 +515,18 @@ function wordCardHtml(w) {
               <div class="practice-stat-icon" style="background:#30D1581A;color:#30D158;">✒️</div>
               <div class="practice-stat-body">
                 <div class="practice-stat-title">Luyện viết</div>
+                <div class="ps-bar">
+                  <div class="ps-bar-ok" style="width:${wrOkPct}%;"></div>
+                  <div class="ps-bar-no" style="width:${wrNoPct}%;"></div>
+                </div>
                 <div class="practice-stat-numbers">
                   <span class="ps-num">Đã làm<b>${w.writingSeen || 0}</b></span>
                   <span class="ps-num ok">Đúng<b>${w.writingCorrect || 0}</b></span>
                   <span class="ps-num no">Sai<b>${w.writingWrong || 0}</b></span>
                 </div>
+              </div>
+            </div>
+          </div>
               </div>
             </div>
           </div>
