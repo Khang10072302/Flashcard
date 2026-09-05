@@ -285,29 +285,35 @@ function renderDashboard(root) {
           </div>
         </div>
 
-        <button class="dash-card dash-vocab" data-goto="inbox">
-          <div class="vocab-stat-row">
-            <div class="vocab-stat-icon" style="background:#0071E31A;color:#0071E3;">📖</div>
-            <div class="vocab-stat-body">
-              <div class="vocab-stat-label">Tổng số từ</div>
-              <div class="vocab-stat-num" style="color:#0071E3;">${allWords.length}</div>
+        <div class="dash-vocab-group">
+          <button class="dash-card" data-goto="inbox">
+            <div class="dash-card-inner">
+              <div class="dash-card-head">
+                <div class="dash-card-icon" style="background:#0071E31A;color:#0071E3;">📖</div>
+              </div>
+              <div class="dash-card-label">Tổng số từ</div>
+              <div class="dash-card-num" style="color:#0071E3;">${allWords.length}</div>
             </div>
-          </div>
-          <div class="vocab-stat-row">
-            <div class="vocab-stat-icon" style="background:#30D1581A;color:#30D158;">✓</div>
-            <div class="vocab-stat-body">
-              <div class="vocab-stat-label">Đã thuộc</div>
-              <div class="vocab-stat-num" style="color:#30D158;">${mastered}</div>
+          </button>
+          <button class="dash-card" data-goto="inbox">
+            <div class="dash-card-inner">
+              <div class="dash-card-head">
+                <div class="dash-card-icon" style="background:#30D1581A;color:#30D158;">✓</div>
+              </div>
+              <div class="dash-card-label">Đã thuộc</div>
+              <div class="dash-card-num" style="color:#30D158;">${mastered}</div>
             </div>
-          </div>
-          <div class="vocab-stat-row">
-            <div class="vocab-stat-icon" style="background:#FF9F0A1A;color:#FF9F0A;">⏳</div>
-            <div class="vocab-stat-body">
-              <div class="vocab-stat-label">Chưa thuộc</div>
-              <div class="vocab-stat-num" style="color:#FF9F0A;">${allWords.length - mastered}</div>
+          </button>
+          <button class="dash-card" data-goto="inbox">
+            <div class="dash-card-inner">
+              <div class="dash-card-head">
+                <div class="dash-card-icon" style="background:#FF9F0A1A;color:#FF9F0A;">⏳</div>
+              </div>
+              <div class="dash-card-label">Chưa thuộc</div>
+              <div class="dash-card-num" style="color:#FF9F0A;">${allWords.length - mastered}</div>
             </div>
-          </div>
-        </button>
+          </button>
+        </div>
 
         <button class="dash-card dash-flashcard" data-goto="flashcard">
           <div class="dash-card-inner">
