@@ -642,39 +642,31 @@ function openEditWordModal(word) {
    ============================================================ */
 function renderFlashcard(root) {
   root.innerHTML = "";
-  const deck = shuffle([...allWords]);
+  let deck = buildDeck(allWords, getFlashcardTier);
   let index = 0;
   let flipped = false;
-  const reviewedIds = [];
-  let correctCount = 0;
-  let wrongCount = 0;
+  let reviewedIds = [];
+  let sessionCorrect = 0;
+  let sessionWrong = 0;
+  let sessionTotal = 0;
 
   const el = document.createElement("div");
   el.className = "section w-mid";
   root.appendChild(el);
 
   function paint() {
-    const remaining = deck.filter((w) => !reviewedIds.includes(w.id));
-
     if (allWords.length === 0) {
       el.innerHTML = `<div class="empty-state">Chưa có từ nào. Thêm từ ở "Sổ từ vựng" trước nhé.</div>`;
       return;
     }
+
+    let remaining = deck.filter((w) => !reviewedIds.includes(w.id));
     if (remaining.length === 0) {
-      el.innerHTML = `
-        <div class="done-state">
-          <div class="emoji">🎉</div>
-          <h1>Xong hết rồi!</h1>
-          <p>Bạn vừa ôn ${deck.length} thẻ.</p>
-          <div class="done-stats">
-            <div>Bạn đã nhớ <b style="color:var(--green);">${correctCount}</b> thẻ</div>
-            <div>Bạn chưa nhớ <b style="color:var(--red);">${wrongCount}</b> thẻ</div>
-          </div>
-          <button class="pbtn" id="reviewAgainBtn" style="margin-top:24px;">Ôn lại</button>
-        </div>
-      `;
-      el.querySelector("#reviewAgainBtn").addEventListener("click", () => renderFlashcard(root));
-      return;
+      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
+      deck = buildDeck(allWords, getFlashcardTier);
+      reviewedIds = [];
+      index = 0;
+      remaining = deck;
     }
 
     const current = remaining[index % remaining.length];
@@ -687,6 +679,7 @@ function renderFlashcard(root) {
           <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
           <span class="progress-count">${reviewedIds.length} / ${deck.length}</span>
         </div>
+        ${sessionTotal > 0 ? `<p class="lede" style="margin-top:6px;">Đã ôn ${sessionTotal} thẻ trong phiên này · Nhớ ${sessionCorrect} · Quên ${sessionWrong}</p>` : ""}
       </div>
 
       <div class="flip-card ${flipped ? "flipped" : ""}" id="flipCard">
@@ -721,14 +714,9 @@ function renderFlashcard(root) {
 
   function next(word, knew) {
     reviewedIds.push(word.id);
-    recordFlashcardResult(uid, word.id, knew);
-    if (knew) {
-      correctCount++;
-      updateWord(uid, word.id, { streak: (word.streak || 0) + 1, mastered: (word.streak || 0) + 1 >= 3 });
-    } else {
-      wrongCount++;
-      updateWord(uid, word.id, { streak: 0 });
-    }
+    sessionTotal++;
+    if (knew) sessionCorrect++; else sessionWrong++;
+    recordFlashcardResult(uid, word.id, knew, word.streak || 0);
     flipped = false;
     index++;
     paint();
@@ -750,7 +738,8 @@ function renderWriting(root) {
   }
 
   let mode = "fill";
-  let wordIndex = 0;
+  let deck = buildDeck(allWords, getWritingTier);
+  let deckIndex = 0;
   let checked = false;
   let correct = false;
   let letterText = "";
@@ -760,7 +749,12 @@ function renderWriting(root) {
   root.appendChild(el);
 
   function paint() {
-    const current = allWords[wordIndex % allWords.length];
+    if (deckIndex >= deck.length) {
+      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
+      deck = buildDeck(allWords, getWritingTier);
+      deckIndex = 0;
+    }
+    const current = deck[deckIndex];
 
     el.innerHTML = `
       <div class="section-head">
@@ -817,15 +811,14 @@ function renderWriting(root) {
       if (checkBtn) checkBtn.addEventListener("click", doCheck);
       const nextBtn = host.querySelector("#nextBtn");
       if (nextBtn) nextBtn.addEventListener("click", () => {
-        wordIndex++; checked = false; paint();
+        deckIndex++; checked = false; paint();
       });
 
       function doCheck() {
         const val = (input.value || "").trim().toLowerCase();
         correct = val === current.word.trim().toLowerCase();
         checked = true;
-        recordWritingResult(uid, current.id, correct);
-        if (correct) updateWord(uid, current.id, { streak: (current.streak || 0) + 1 });
+        recordWritingResult(uid, current.id, correct, current.writingStreak || 0);
         paint();
       }
     } else {
@@ -1150,6 +1143,63 @@ function renderProfile(root) {
   }
 
   paint();
+}
+
+/* ============================================================
+   THUẬT TOÁN ÔN TẬP — xếp hạng ẩn (chưa thuộc / có thể quên / đã thuộc)
+   dựa trên streak (số lần đúng liên tiếp), rồi trộn bộ 20 thẻ theo
+   tỉ lệ 14/4/2 để ưu tiên ôn từ yếu, thỉnh thoảng nhắc lại từ đã vững.
+
+   NOTE: các con số dưới đây (ngưỡng streak, số lần tối thiểu, tỉ lệ
+   14/4/2) đều có thể chỉnh lại dễ dàng ở đúng chỗ này nếu muốn.
+   ============================================================ */
+const DECK_SIZE = 20;
+const DECK_QUOTA = { new: 14, atrisk: 4, mastered: 2 };
+const MIN_ATTEMPTS_TO_RANK = 3; // ôn dưới 3 lần thì luôn coi là "chưa thuộc"
+const STREAK_MASTERED = 5;      // streak >= 5 -> đã thuộc
+const STREAK_ATRISK = 2;        // streak 2-4 -> có thể quên
+
+function tierFromStreak(seen, streak) {
+  if ((seen || 0) < MIN_ATTEMPTS_TO_RANK) return "new";
+  if ((streak || 0) >= STREAK_MASTERED) return "mastered";
+  if ((streak || 0) >= STREAK_ATRISK) return "atrisk";
+  return "new";
+}
+
+function getFlashcardTier(w) { return tierFromStreak(w.flashcardSeen, w.streak); }
+function getWritingTier(w) { return tierFromStreak(w.writingSeen, w.writingStreak); }
+
+// Trộn 1 bộ tối đa DECK_SIZE thẻ theo tỉ lệ DECK_QUOTA, dựa trên hàm
+// xếp hạng truyền vào (getFlashcardTier hoặc getWritingTier).
+function buildDeck(words, tierFn) {
+  if (words.length === 0) return [];
+  if (words.length <= DECK_SIZE) return shuffle([...words]);
+
+  const bucket = { new: [], atrisk: [], mastered: [] };
+  words.forEach((w) => bucket[tierFn(w)].push(w));
+
+  const used = new Set();
+  const deck = [];
+  let shortfall = 0;
+
+  function takeFrom(tierName, n) {
+    const pool = shuffle([...bucket[tierName]]);
+    const take = pool.slice(0, n);
+    take.forEach((w) => used.add(w.id));
+    deck.push(...take);
+    shortfall += n - take.length;
+  }
+
+  takeFrom("new", DECK_QUOTA.new);
+  takeFrom("atrisk", DECK_QUOTA.atrisk);
+  takeFrom("mastered", DECK_QUOTA.mastered);
+
+  if (shortfall > 0) {
+    const remaining = words.filter((w) => !used.has(w.id));
+    deck.push(...shuffle(remaining).slice(0, shortfall));
+  }
+
+  return shuffle(deck);
 }
 
 /* ============================================================
