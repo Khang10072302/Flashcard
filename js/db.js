@@ -29,6 +29,7 @@ export function addWord(uid, data) {
     tag: data.tag || "Noun",
     mastered: false,
     streak: 0,
+    writingStreak: 0,
     flashcardSeen: 0,
     flashcardCorrect: 0,
     flashcardWrong: 0,
@@ -47,21 +48,28 @@ export function deleteWord(uid, wordId) {
   return deleteDoc(doc(db, "users", uid, "words", wordId));
 }
 
-// Ghi lại 1 lần ôn Flashcard: luôn +1 "đã học", cộng thêm +1 "thuộc" hoặc "quên".
-export function recordFlashcardResult(uid, wordId, knew) {
+// Ghi lại 1 lần ôn Flashcard: +1 "đã học", +1 "thuộc"/"quên", và cập nhật streak
+// (streak reset về 0 nếu sai — dùng để xếp hạng "chưa thuộc/có thể quên/đã thuộc").
+export function recordFlashcardResult(uid, wordId, knew, currentStreak) {
+  const newStreak = knew ? (currentStreak || 0) + 1 : 0;
   return updateDoc(doc(db, "users", uid, "words", wordId), {
     flashcardSeen: increment(1),
     flashcardCorrect: increment(knew ? 1 : 0),
-    flashcardWrong: increment(knew ? 0 : 1)
+    flashcardWrong: increment(knew ? 0 : 1),
+    streak: newStreak,
+    mastered: newStreak >= 3
   });
 }
 
-// Ghi lại 1 lần kiểm tra ở chế độ "Điền từ" của Luyện viết.
-export function recordWritingResult(uid, wordId, correct) {
+// Ghi lại 1 lần kiểm tra ở chế độ "Điền từ" của Luyện viết — có streak riêng
+// (thuộc nghĩa và viết đúng chính tả là 2 kỹ năng khác nhau, không dùng chung streak).
+export function recordWritingResult(uid, wordId, correct, currentWritingStreak) {
+  const newStreak = correct ? (currentWritingStreak || 0) + 1 : 0;
   return updateDoc(doc(db, "users", uid, "words", wordId), {
     writingSeen: increment(1),
     writingCorrect: increment(correct ? 1 : 0),
-    writingWrong: increment(correct ? 0 : 1)
+    writingWrong: increment(correct ? 0 : 1),
+    writingStreak: newStreak
   });
 }
 
