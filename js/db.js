@@ -57,7 +57,7 @@ export function recordFlashcardResult(uid, wordId, knew, currentStreak) {
     flashcardCorrect: increment(knew ? 1 : 0),
     flashcardWrong: increment(knew ? 0 : 1),
     streak: newStreak,
-    mastered: newStreak >= 3
+    mastered: newStreak >= 10
   });
 }
 
