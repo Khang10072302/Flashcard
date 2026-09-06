@@ -1156,8 +1156,8 @@ function renderProfile(root) {
 const DECK_SIZE = 20;
 const DECK_QUOTA = { new: 14, atrisk: 4, mastered: 2 };
 const MIN_ATTEMPTS_TO_RANK = 3; // ôn dưới 3 lần thì luôn coi là "chưa thuộc"
-const STREAK_MASTERED = 5;      // streak >= 5 -> đã thuộc
-const STREAK_ATRISK = 2;        // streak 2-4 -> có thể quên
+const STREAK_MASTERED = 10;     // streak >= 10 -> đã thuộc
+const STREAK_ATRISK = 4;        // streak 4-9 -> có thể quên
 
 function tierFromStreak(seen, streak) {
   if ((seen || 0) < MIN_ATTEMPTS_TO_RANK) return "new";
