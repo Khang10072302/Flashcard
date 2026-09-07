@@ -532,9 +532,6 @@ function wordCardHtml(w) {
               </div>
             </div>
           </div>
-              </div>
-            </div>
-          </div>
 
           <div class="word-card-foot">
             <span class="added">Thêm ${formatDate(w.addedAt)}</span>
