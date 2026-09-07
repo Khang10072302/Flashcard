@@ -639,13 +639,17 @@ function openEditWordModal(word) {
    ============================================================ */
 function renderFlashcard(root) {
   root.innerHTML = "";
+  let deckNumber = 1;
   let deck = buildDeck(allWords, getFlashcardTier);
   let index = 0;
   let flipped = false;
   let reviewedIds = [];
+  let deckCorrect = 0;
+  let deckWrong = 0;
   let sessionCorrect = 0;
   let sessionWrong = 0;
   let sessionTotal = 0;
+  let deckDone = false;
 
   const el = document.createElement("div");
   el.className = "section w-mid";
@@ -657,13 +661,38 @@ function renderFlashcard(root) {
       return;
     }
 
-    let remaining = deck.filter((w) => !reviewedIds.includes(w.id));
+    if (deckDone) {
+      el.innerHTML = `
+        <div class="done-state">
+          <div class="emoji">🎉</div>
+          <h1>Hoàn thành Bộ ${deckNumber}!</h1>
+          <p>Bạn vừa ôn ${deck.length} thẻ.</p>
+          <div class="done-stats">
+            <div>Bạn đã nhớ <b style="color:var(--green);">${deckCorrect}</b> thẻ</div>
+            <div>Bạn chưa nhớ <b style="color:var(--red);">${deckWrong}</b> thẻ</div>
+          </div>
+          <button class="pbtn" id="nextDeckBtn" style="margin-top:24px;">Học bộ tiếp theo →</button>
+        </div>
+      `;
+      el.querySelector("#nextDeckBtn").addEventListener("click", () => {
+        deckNumber++;
+        deck = buildDeck(allWords, getFlashcardTier);
+        reviewedIds = [];
+        index = 0;
+        flipped = false;
+        deckCorrect = 0;
+        deckWrong = 0;
+        deckDone = false;
+        paint();
+      });
+      return;
+    }
+
+    const remaining = deck.filter((w) => !reviewedIds.includes(w.id));
     if (remaining.length === 0) {
-      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
-      deck = buildDeck(allWords, getFlashcardTier);
-      reviewedIds = [];
-      index = 0;
-      remaining = deck;
+      deckDone = true;
+      paint();
+      return;
     }
 
     const current = remaining[index % remaining.length];
@@ -676,7 +705,7 @@ function renderFlashcard(root) {
           <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
           <span class="progress-count">${reviewedIds.length} / ${deck.length}</span>
         </div>
-        ${sessionTotal > 0 ? `<p class="lede" style="margin-top:6px;">Đã ôn ${sessionTotal} thẻ trong phiên này · Nhớ ${sessionCorrect} · Quên ${sessionWrong}</p>` : ""}
+        <p class="lede" style="margin-top:6px;">Bộ ${deckNumber}${sessionTotal > 0 ? ` · Đã ôn ${sessionTotal} thẻ trong phiên này · Nhớ ${sessionCorrect} · Quên ${sessionWrong}` : ""}</p>
       </div>
 
       <div class="flip-card ${flipped ? "flipped" : ""}" id="flipCard">
@@ -712,7 +741,7 @@ function renderFlashcard(root) {
   function next(word, knew) {
     reviewedIds.push(word.id);
     sessionTotal++;
-    if (knew) sessionCorrect++; else sessionWrong++;
+    if (knew) { sessionCorrect++; deckCorrect++; } else { sessionWrong++; deckWrong++; }
     recordFlashcardResult(uid, word.id, knew, word.streak || 0);
     flipped = false;
     index++;
