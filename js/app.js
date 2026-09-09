@@ -728,7 +728,7 @@ function renderFlashcard(root) {
           </div>
           <div class="glass"></div>
           <div class="word-layer">
-            <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:12px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
+            <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:16px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
             <div class="w speak-trigger">${escapeHtml(current.word)}</div>
             <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
             <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
