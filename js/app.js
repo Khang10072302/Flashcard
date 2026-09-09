@@ -1234,18 +1234,33 @@ function buildDeck(words, tierFn) {
    ============================================================ */
 
 // Hiệu ứng pháo giấy nổ ra từ giữa màn hình — dùng thuần CSS/JS, không cần thư viện.
+// Hiệu ứng pháo giấy nổ ra — nhiều "quả" nổ rải rác quanh 1/3 màn hình từ trên xuống.
 function fireConfetti() {
+  const bursts = [
+    { x: 50, y: 32, count: 70, delay: 0 },    // quả chính, ở giữa, cao hơn trước
+    { x: 24, y: 40, count: 35, delay: 120 },  // quả phụ bên trái
+    { x: 76, y: 40, count: 35, delay: 120 },  // quả phụ bên phải
+    { x: 38, y: 22, count: 25, delay: 220 },  // quả nhỏ phía trên-trái
+    { x: 62, y: 22, count: 25, delay: 220 }   // quả nhỏ phía trên-phải
+  ];
+  bursts.forEach((b) => {
+    setTimeout(() => confettiBurstAt(b.x, b.y, b.count), b.delay);
+  });
+}
+
+function confettiBurstAt(xPercent, yPercent, count) {
   const colors = ["#0071E3", "#34AADC", "#30D158", "#FF9F0A", "#FF3B30", "#5E5CE6"];
   const container = document.createElement("div");
   container.className = "confetti-burst";
+  container.style.left = `${xPercent}%`;
+  container.style.top = `${yPercent}%`;
   document.body.appendChild(container);
 
-  const count = 70;
   for (let i = 0; i < count; i++) {
     const piece = document.createElement("div");
     piece.className = "confetti-piece";
     const angle = Math.random() * Math.PI * 2;
-    const distance = 90 + Math.random() * 220;
+    const distance = 70 + Math.random() * 170;
     const tx = Math.cos(angle) * distance;
     const ty = Math.sin(angle) * distance;
     piece.style.setProperty("--tx", `${tx}px`);
