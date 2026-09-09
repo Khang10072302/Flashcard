@@ -409,9 +409,9 @@ input,textarea{font-family:inherit;}
 .word-layer .speak-trigger:hover{opacity:.7;}
 .word-layer .tip{margin-top:32px;font-size:12px;color:var(--ink-dim);font-weight:500;letter-spacing:.2px;transition:opacity .3s ease;}
 .word-layer .tag-pill{transition:transform .5s cubic-bezier(.4,0,.2,1);}
-.flip-card.revealed .word-layer .tag-pill{transform:translateY(-58px) scale(.85);}
-.flip-card.revealed .word-layer .w{transform:translateY(-58px) scale(.8);}
-.flip-card.revealed .word-layer .ph{opacity:0;transform:translateY(-58px);}
+.flip-card.revealed .word-layer .tag-pill{transform:translateY(-44px) scale(.85);}
+.flip-card.revealed .word-layer .w{transform:translateY(-68px) scale(.8);}
+.flip-card.revealed .word-layer .ph{opacity:0;transform:translateY(-68px);}
 .flip-card.revealed .word-layer .tip{opacity:0;}
 .meaning-layer{padding:52px 40px 36px;}
 
