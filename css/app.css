@@ -659,3 +659,23 @@ input,textarea{font-family:inherit;}
   cursor:pointer;font-family:inherit;
 }
 .modal-delete-link:hover{text-decoration:underline;}
+
+/* ---------- confetti nổ ra giữa màn hình khi hoàn thành 1 bộ ---------- */
+.confetti-burst{
+  position:fixed;inset:0;z-index:200;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.confetti-piece{
+  position:absolute;top:50%;left:50%;
+  width:8px;height:8px;margin:-4px 0 0 -4px;
+  opacity:1;
+  animation:confettiBurst .9s cubic-bezier(.2,.8,.3,1) forwards;
+}
+@keyframes confettiBurst{
+  0%{transform:translate(0,0) rotate(0deg);opacity:1;}
+  70%{opacity:1;}
+  100%{transform:translate(var(--tx),calc(var(--ty) + 160px)) rotate(var(--rot));opacity:0;}
+}
+@media (prefers-reduced-motion: reduce){
+  .confetti-burst{display:none;}
+}
