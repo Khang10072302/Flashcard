@@ -1,1 +1,1 @@
-This whole is made by Claude AI
+This whole thing is made by Claude AI
