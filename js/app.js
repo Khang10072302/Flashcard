@@ -437,6 +437,13 @@ function renderInbox(root) {
         expandedId = expandedId === id ? null : id;
         paintList();
       });
+      const avatarBtn = card.querySelector(".speak-avatar");
+      if (avatarBtn) {
+        avatarBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          speak(avatarBtn.dataset.speakWord, "en-US");
+        });
+      }
       const toggleBtn = card.querySelector(".mastered-toggle");
       if (toggleBtn) {
         toggleBtn.addEventListener("click", (e) => {
@@ -470,7 +477,10 @@ function wordCardHtml(w) {
   return `
     <div class="word-card" data-id="${w.id}" data-word="${escapeAttr(w.word)}">
       <button class="word-card-head" type="button">
-        <div class="word-avatar ${w.mastered ? "mastered" : ""}">${escapeHtml((w.word || "?")[0] || "?").toUpperCase()}</div>
+        <div class="word-avatar ${w.mastered ? "mastered" : ""} speak-avatar" data-speak-word="${escapeAttr(w.word)}">
+          <span class="word-avatar-letter">${escapeHtml((w.word || "?")[0] || "?").toUpperCase()}</span>
+          <span class="word-avatar-speak">🔊</span>
+        </div>
         <div class="word-card-main">
           <div class="word-card-title">
             <span class="w">${escapeHtml(w.word)}</span>
@@ -713,8 +723,8 @@ function renderFlashcard(root) {
         <div class="flip-card-inner">
           <div class="flip-face flip-front">
             <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:24px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
-            <div class="w">${escapeHtml(current.word)}</div>
-            <div class="ph">${escapeHtml(current.phonetic || "")}</div>
+            <div class="w speak-trigger">${escapeHtml(current.word)}</div>
+            <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
             <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
           </div>
           <div class="flip-face flip-back">
@@ -732,6 +742,12 @@ function renderFlashcard(root) {
     `;
 
     el.querySelector("#flipCard").addEventListener("click", () => { flipped = !flipped; paint(); });
+    el.querySelectorAll(".speak-trigger").forEach((elx) => {
+      elx.addEventListener("click", (e) => {
+        e.stopPropagation();
+        speak(current.word, "en-US");
+      });
+    });
 
     const againBtn = el.querySelector(".again");
     const gotItBtn = el.querySelector(".got-it");
@@ -1234,6 +1250,20 @@ function buildDeck(words, tierFn) {
    ============================================================ */
 
 // Hiệu ứng pháo giấy nổ ra từ giữa màn hình — dùng thuần CSS/JS, không cần thư viện.
+// Đọc to 1 từ bằng giọng đọc có sẵn của trình duyệt (Web Speech API).
+// lang mặc định "en-US" (giọng Anh-Mỹ).
+function speak(text, lang = "en-US") {
+  if (!text || !("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang;
+  const voices = speechSynthesis.getVoices();
+  const exact = voices.find((v) => v.lang === lang);
+  const family = voices.find((v) => v.lang.startsWith(lang.split("-")[0]));
+  if (exact || family) u.voice = exact || family;
+  speechSynthesis.speak(u);
+}
+
 // Hiệu ứng pháo giấy nổ ra — nhiều "quả" nổ rải rác quanh 1/3 màn hình từ trên xuống.
 function fireConfetti() {
   const bursts = [
