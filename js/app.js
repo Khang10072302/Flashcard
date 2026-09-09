@@ -441,7 +441,7 @@ function renderInbox(root) {
       if (avatarBtn) {
         avatarBtn.addEventListener("click", (e) => {
           e.stopPropagation();
-          speak(avatarBtn.dataset.speakWord, "en-US");
+          speak(avatarBtn.dataset.speakWord);
         });
       }
       const toggleBtn = card.querySelector(".mastered-toggle");
@@ -745,7 +745,7 @@ function renderFlashcard(root) {
     el.querySelectorAll(".speak-trigger").forEach((elx) => {
       elx.addEventListener("click", (e) => {
         e.stopPropagation();
-        speak(current.word, "en-US");
+        speak(current.word);
       });
     });
 
@@ -1252,14 +1252,20 @@ function buildDeck(words, tierFn) {
 // Hiệu ứng pháo giấy nổ ra từ giữa màn hình — dùng thuần CSS/JS, không cần thư viện.
 // Đọc to 1 từ bằng giọng đọc có sẵn của trình duyệt (Web Speech API).
 // lang mặc định "en-US" (giọng Anh-Mỹ).
-function speak(text, lang = "en-US") {
+// Tự nhận diện tiếng Nhật qua ký tự Hiragana/Katakana/Kanji trong từ — không cần chọn tay.
+function detectSpeechLang(text) {
+  return /[\u3040-\u30ff\u4e00-\u9fff]/.test(text || "") ? "ja-JP" : "en-US";
+}
+
+function speak(text, lang) {
   if (!text || !("speechSynthesis" in window)) return;
+  const finalLang = lang || detectSpeechLang(text);
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang;
+  u.lang = finalLang;
   const voices = speechSynthesis.getVoices();
-  const exact = voices.find((v) => v.lang === lang);
-  const family = voices.find((v) => v.lang.startsWith(lang.split("-")[0]));
+  const exact = voices.find((v) => v.lang === finalLang);
+  const family = voices.find((v) => v.lang.startsWith(finalLang.split("-")[0]));
   if (exact || family) u.voice = exact || family;
   speechSynthesis.speak(u);
 }
