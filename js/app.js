@@ -742,7 +742,11 @@ function renderFlashcard(root) {
       </div>
     `;
 
-    el.querySelector("#flipCard").addEventListener("click", () => { flipped = !flipped; paint(); });
+    const flipCardEl = el.querySelector("#flipCard");
+    flipCardEl.addEventListener("click", () => {
+      flipped = !flipped;
+      flipCardEl.classList.toggle("revealed", flipped);
+    });
     el.querySelectorAll(".speak-trigger").forEach((elx) => {
       elx.addEventListener("click", (e) => {
         e.stopPropagation();
