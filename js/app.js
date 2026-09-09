@@ -674,6 +674,7 @@ function renderFlashcard(root) {
           <button class="pbtn" id="nextDeckBtn" style="margin-top:24px;">Học bộ tiếp theo →</button>
         </div>
       `;
+      fireConfetti();
       el.querySelector("#nextDeckBtn").addEventListener("click", () => {
         deckNumber++;
         deck = buildDeck(allWords, getFlashcardTier);
@@ -1231,6 +1232,34 @@ function buildDeck(words, tierFn) {
 /* ============================================================
    TIỆN ÍCH DÙNG CHUNG
    ============================================================ */
+
+// Hiệu ứng pháo giấy nổ ra từ giữa màn hình — dùng thuần CSS/JS, không cần thư viện.
+function fireConfetti() {
+  const colors = ["#0071E3", "#34AADC", "#30D158", "#FF9F0A", "#FF3B30", "#5E5CE6"];
+  const container = document.createElement("div");
+  container.className = "confetti-burst";
+  document.body.appendChild(container);
+
+  const count = 70;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 90 + Math.random() * 220;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    piece.style.setProperty("--tx", `${tx}px`);
+    piece.style.setProperty("--ty", `${ty}px`);
+    piece.style.setProperty("--rot", `${Math.random() * 720 - 360}deg`);
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = `${Math.random() * 0.12}s`;
+    if (Math.random() < 0.4) piece.style.borderRadius = "50%";
+    if (Math.random() < 0.5) { piece.style.width = "6px"; piece.style.height = "11px"; }
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.remove(), 1500);
+}
+
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
