@@ -719,18 +719,19 @@ function renderFlashcard(root) {
         <p class="lede" style="margin-top:6px;">Bộ ${deckNumber}${sessionTotal > 0 ? ` · Đã ôn ${sessionTotal} thẻ trong phiên này · Nhớ ${sessionCorrect} · Quên ${sessionWrong}` : ""}</p>
       </div>
 
-      <div class="flip-card ${flipped ? "flipped" : ""}" id="flipCard">
-        <div class="flip-card-inner">
-          <div class="flip-face flip-front">
-            <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:24px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
-            <div class="w speak-trigger">${escapeHtml(current.word)}</div>
-            <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
-            <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
-          </div>
-          <div class="flip-face flip-back">
+      <div class="flip-card ${flipped ? "revealed" : ""}" id="flipCard">
+        <div class="glass-frame">
+          <div class="meaning-layer">
             <div class="meaning">${escapeHtml(current.meaning || "")}</div>
             <div class="divider"></div>
             <div class="example">${current.example ? `"${escapeHtml(current.example)}"` : ""}</div>
+          </div>
+          <div class="glass"></div>
+          <div class="word-layer">
+            <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:12px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
+            <div class="w speak-trigger">${escapeHtml(current.word)}</div>
+            <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
+            <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
           </div>
         </div>
       </div>
