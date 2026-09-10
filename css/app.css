@@ -129,14 +129,59 @@ input,textarea{font-family:inherit;}
 .sidebar.collapsed .sidebar-nav,
 .sidebar.collapsed .sidebar-footer{padding-left:0;padding-right:0;}
 
-/* ---------- mobile fixed menu button ---------- */
-.mobile-menu-btn{
-  position:fixed;top:16px;left:16px;z-index:60;
-  width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-  background:rgba(28,28,30,.92);backdrop-filter:blur(10px);
-  color:#fff;font-size:17px;cursor:pointer;
-  display:none;align-items:center;justify-content:center;
-  box-shadow:0 4px 14px rgba(0,0,0,.25);
+/* ---------- mobile bottom nav: expanding circular pill + add-word FAB + "Khác" sheet ---------- */
+.mobile-nav{display:none;}
+@media (max-width:760px){
+  .mobile-nav{display:block;}
+
+  .nav-pill{
+    position:fixed;left:16px;bottom:18px;z-index:60;
+    height:56px;width:56px;border-radius:28px;background:#1C1C1E;
+    box-shadow:0 10px 26px rgba(0,0,0,.3);
+    display:flex;align-items:center;overflow:hidden;
+    transition:width .38s cubic-bezier(.4,0,.2,1);
+  }
+  .nav-pill.open{width:236px;}
+  .mnav-btn{
+    width:56px;height:56px;border-radius:28px;border:none;background:transparent;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#8E8E93;position:relative;
+    transition:color .2s ease;
+  }
+  .mnav-btn svg{width:20px;height:20px;}
+  .mnav-btn.active{color:#fff;}
+  .mnav-btn .dot{position:absolute;bottom:9px;width:4px;height:4px;border-radius:50%;background:var(--blue);opacity:0;transition:opacity .2s ease;}
+  .mnav-btn.active .dot{opacity:1;}
+  .mnav-extra{opacity:0;transform:scale(.6);transition:opacity .22s ease,transform .22s ease;}
+  .nav-pill.open .mnav-extra{opacity:1;transform:scale(1);}
+  .nav-pill.open .mnav-extra:nth-child(2){transition-delay:.06s;}
+  .nav-pill.open .mnav-extra:nth-child(3){transition-delay:.11s;}
+  .nav-pill.open .mnav-extra:nth-child(4){transition-delay:.16s;}
+
+  .mnav-add{
+    position:fixed;right:16px;bottom:18px;z-index:60;
+    width:56px;height:56px;border-radius:28px;border:none;cursor:pointer;
+    background:var(--blue);color:#fff;box-shadow:0 10px 26px rgba(0,113,227,.35);
+    display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:400;
+    transition:opacity .25s ease,transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .mnav-add.hidden{opacity:0;transform:scale(.5) translateX(10px);pointer-events:none;}
+
+  .mnav-scrim{position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+  .mnav-scrim.open{opacity:1;pointer-events:auto;}
+  .mnav-sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:66;
+    background:#fff;border-radius:24px 24px 0 0;padding:10px 16px calc(26px + env(safe-area-inset-bottom,0px));
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .mnav-sheet.open{transform:translateY(0);}
+  .mnav-sheet-handle{width:36px;height:4px;border-radius:3px;background:var(--line);margin:6px auto 14px;}
+  .mnav-sheet-item{
+    display:flex;align-items:center;gap:12px;width:100%;padding:13px 6px;border:none;background:none;
+    font-size:15px;font-weight:500;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line-soft);font-family:inherit;
+  }
+  .mnav-sheet-item:last-child{border-bottom:none;}
+  .mnav-sheet-item .ico{width:20px;display:flex;opacity:.75;}
+  .mnav-sheet-item.danger{color:var(--red);}
 }
 
 .sidebar-nav{flex:1;padding:0 10px;overflow-y:auto;}
@@ -688,31 +733,9 @@ input,textarea{font-family:inherit;}
 
 /* ---------- mobile: sidebar ẩn mặc định, mở ra dạng toàn màn hình ---------- */
 @media (max-width:760px){
-  .mobile-menu-btn{display:flex;}
-
-  .sidebar{
-    position:fixed;inset:0;z-index:55;
-    width:100vw !important;
-    transform:translateX(-100%);
-    transition:transform .25s cubic-bezier(.4,0,.2,1);
-    padding-top:64px;
-  }
-  .sidebar.mobile-open{transform:translateX(0);}
-
-  /* trên mobile luôn hiện đầy đủ (bỏ qua trạng thái thu gọn của desktop) */
-  .sidebar.collapsed .brand-text{display:block;max-width:170px;opacity:1;}
-  .sidebar.collapsed .label-text{max-width:170px;opacity:1;}
-  .sidebar.collapsed .nav-section-label{max-height:20px;opacity:1;margin-bottom:6px;}
-  .sidebar.collapsed .sidebar-brand{width:auto;min-width:0;justify-content:flex-start;gap:10px;}
-  .sidebar.collapsed .nav-item{width:100%;height:auto;margin:0 0 6px;justify-content:flex-start;padding:9px 12px;gap:10px;}
-  .sidebar.collapsed .new-word-btn{padding:10px;gap:6px;}
-  .sidebar.collapsed .user-avatar-btn{justify-content:flex-start;gap:9px;}
-  .sidebar-toggle-btn{display:none;}
-
+  .sidebar{display:none;}
   .main-content{width:100%;}
-}
-@media (min-width:761px){
-  .mobile-menu-btn{display:none !important;}
+  .section{padding-bottom:76px;}
 }
 
 /* ---------- modal sửa từ ---------- */
