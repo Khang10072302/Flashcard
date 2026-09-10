@@ -12,7 +12,8 @@ const ICONS = {
   flashcard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="4.5" y="5.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 1.5"/></svg>`,
   writing: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
   quiz: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 6.5a1.5 1.5 0 113 0c0 1-1.5 1.5-1.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor"/></svg>`,
-  progress: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4L9 10l5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`
+  progress: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4L9 10l5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  more: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="13" cy="8" r="1.3" fill="currentColor"/></svg>`
 };
 
 let uid = null;
@@ -31,7 +32,7 @@ async function init() {
   wireNav();
   wireUserMenu();
   wireSidebarToggle();
-  wireMobileMenu();
+  wireMobileNav();
   wireBrandIconFallback();
   listenWords(uid, onWordsChange);
   listenUserProfile(uid, onProfileChange);
@@ -105,17 +106,57 @@ function wireSidebarToggle() {
   });
 }
 
-function wireMobileMenu() {
-  const sidebar = document.getElementById("sidebar");
-  const btn = document.getElementById("mobileMenuBtn");
+function wireMobileNav() {
+  const pill = document.getElementById("mNavPill");
+  const homeBtn = document.getElementById("mNavHome");
+  const flashBtn = document.getElementById("mNavFlashcard");
+  const inboxBtn = document.getElementById("mNavInbox");
+  const moreBtn = document.getElementById("mNavMore");
+  const addBtn = document.getElementById("mNavAdd");
+  const scrim = document.getElementById("mNavScrim");
+  const sheet = document.getElementById("mNavSheet");
+  if (!pill) return;
 
-  function setOpen(isOpen) {
-    sidebar.classList.toggle("mobile-open", isOpen);
-    btn.textContent = isOpen ? "✕" : "☰";
-    document.body.style.overflow = isOpen ? "hidden" : "";
+  homeBtn.querySelector(".ico").innerHTML = ICONS.dashboard;
+  flashBtn.querySelector(".ico").innerHTML = ICONS.flashcard;
+  inboxBtn.querySelector(".ico").innerHTML = ICONS.inbox;
+  moreBtn.querySelector(".ico").innerHTML = ICONS.more;
+  sheet.querySelector('[data-section="writing"] .ico').innerHTML = ICONS.writing;
+  sheet.querySelector('[data-section="quiz"] .ico').innerHTML = ICONS.quiz;
+  sheet.querySelector('[data-section="progress"] .ico').innerHTML = ICONS.progress;
+
+  let pillOpen = false;
+  function setPillOpen(isOpen) {
+    pillOpen = isOpen;
+    pill.classList.toggle("open", isOpen);
+    addBtn.classList.toggle("hidden", isOpen);
   }
-  btn.addEventListener("click", () => setOpen(!sidebar.classList.contains("mobile-open")));
-  window.__closeMobileNav = () => setOpen(false);
+  function closeSheet() {
+    sheet.classList.remove("open");
+    scrim.classList.remove("open");
+  }
+
+  homeBtn.addEventListener("click", () => {
+    if (!pillOpen) { setPillOpen(true); return; }
+    goto("dashboard");
+    setPillOpen(false);
+  });
+  flashBtn.addEventListener("click", () => { goto("flashcard"); setPillOpen(false); });
+  inboxBtn.addEventListener("click", () => { goto("inbox"); setPillOpen(false); });
+  moreBtn.addEventListener("click", () => { sheet.classList.add("open"); scrim.classList.add("open"); });
+  addBtn.addEventListener("click", () => { editingId = null; goto("add"); });
+
+  scrim.addEventListener("click", closeSheet);
+  sheet.querySelectorAll("[data-section]").forEach((b) => {
+    b.addEventListener("click", () => { goto(b.dataset.section); closeSheet(); });
+  });
+  document.getElementById("mNavProfile").addEventListener("click", () => { goto("profile"); closeSheet(); });
+  document.getElementById("mNavLogout").addEventListener("click", () => {
+    closeSheet();
+    document.getElementById("logoutMenuBtn").click();
+  });
+
+  window.__closeMobileNav = () => { setPillOpen(false); closeSheet(); };
 }
 
 function wireBrandIconFallback() {
