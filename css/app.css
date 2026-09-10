@@ -355,7 +355,7 @@ input,textarea{font-family:inherit;}
 .progress-count{font-size:13px;color:var(--ink-soft);white-space:nowrap;}
 
 .flip-card{
-  height:320px;cursor:pointer;border-radius:28px;padding:9px;
+  position:relative;height:320px;cursor:pointer;border-radius:28px;padding:9px;z-index:3;
   background:linear-gradient(160deg,#F4F4F6,#DDDDE1);
   box-shadow:0 24px 44px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.04);
 }
@@ -414,6 +414,42 @@ input,textarea{font-family:inherit;}
 .flip-card.revealed .word-layer .ph{opacity:0;transform:translateY(-68px);}
 .flip-card.revealed .word-layer .tip{opacity:0;}
 .meaning-layer{padding:52px 40px 36px;}
+
+/* ---------- deck stack behind the front card ---------- */
+.deck-wrap{position:relative;height:320px;}
+.stack-card{
+  position:absolute;inset:0;border-radius:28px;
+  background:linear-gradient(160deg,#F4F4F6,#DDDDE1);
+  box-shadow:0 14px 28px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.04);
+  transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s ease;
+}
+.stack-card.l2{transform:scale(.90) translateY(-20px);z-index:1;}
+.stack-card.l1{transform:scale(.95) translateY(-11px);z-index:2;}
+.stack-card.l2.advance{transform:scale(.95) translateY(-11px);}
+.stack-card.l1.advance{transform:scale(1) translateY(0);opacity:0;}
+
+/* ---------- card leaving / arriving ---------- */
+.flip-card.swipe-out-right{transform:translateX(150%) translateY(-14px) rotate(16deg);opacity:0;transition:transform .48s cubic-bezier(.4,0,.2,1),opacity .48s ease;}
+.flip-card.swipe-out-left{transform:translateX(-150%) translateY(-14px) rotate(-16deg);opacity:0;transition:transform .48s cubic-bezier(.4,0,.2,1),opacity .48s ease;}
+.flip-card.card-enter{transform:scale(.9) translateY(18px);opacity:0;}
+.flip-card.card-enter-active{transform:scale(1) translateY(0);opacity:1;transition:transform .42s cubic-bezier(.34,1.4,.64,1),opacity .32s ease;}
+
+/* ---------- glass-edge glow ring on rating ---------- */
+.swipe-glow{position:absolute;inset:9px;border-radius:21px;z-index:4;pointer-events:none;opacity:0;}
+.swipe-glow.flash-green{animation:glowPulse .7s ease forwards;box-shadow:inset 0 0 0 3px rgba(48,209,88,.95),0 0 0 3px rgba(48,209,88,.7),0 0 20px 3px rgba(48,209,88,.45);}
+.swipe-glow.flash-red{animation:glowPulse .7s ease forwards;box-shadow:inset 0 0 0 3px rgba(255,59,48,.9),0 0 0 3px rgba(255,59,48,.65),0 0 20px 3px rgba(255,59,48,.4);}
+@keyframes glowPulse{0%{opacity:0;}25%{opacity:1;}100%{opacity:0;}}
+
+/* ---------- ✓ / ✗ stamp on rating ---------- */
+.stamp{position:absolute;top:50%;left:50%;z-index:6;pointer-events:none;font-size:56px;font-weight:800;opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-12deg);}
+.stamp.go{animation:stampPop .6s cubic-bezier(.2,.9,.3,1.2) forwards;}
+@keyframes stampPop{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(-14deg);}
+  35%{opacity:.9;transform:translate(-50%,-60%) scale(1.05) rotate(-8deg);}
+  100%{opacity:0;transform:translate(-50%,-95%) scale(1.15) rotate(-6deg);}
+}
+.stamp.correct{color:var(--green);}
+.stamp.wrong{color:var(--red);}
 
 .rate-row{display:flex;gap:12px;margin-top:20px;}
 .rate-row .again{flex:1;}
