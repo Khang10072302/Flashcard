@@ -660,6 +660,7 @@ function renderFlashcard(root) {
   let sessionWrong = 0;
   let sessionTotal = 0;
   let deckDone = false;
+  let busy = false;
 
   const el = document.createElement("div");
   el.className = "section w-mid";
@@ -719,20 +720,26 @@ function renderFlashcard(root) {
         <p class="lede" style="margin-top:6px;">Bộ ${deckNumber}${sessionTotal > 0 ? ` · Đã ôn ${sessionTotal} thẻ trong phiên này · Nhớ ${sessionCorrect} · Quên ${sessionWrong}` : ""}</p>
       </div>
 
-      <div class="flip-card ${flipped ? "revealed" : ""}" id="flipCard">
-        <div class="glass-frame">
-          <div class="meaning-layer">
-            <div class="meaning">${escapeHtml(current.meaning || "")}</div>
-            <div class="divider"></div>
-            <div class="example">${current.example ? `"${escapeHtml(current.example)}"` : ""}</div>
+      <div class="deck-wrap">
+        <div class="stack-card l2"></div>
+        <div class="stack-card l1"></div>
+        <div class="flip-card ${flipped ? "revealed" : ""}" id="flipCard">
+          <div class="glass-frame">
+            <div class="meaning-layer">
+              <div class="meaning">${escapeHtml(current.meaning || "")}</div>
+              <div class="divider"></div>
+              <div class="example">${current.example ? `"${escapeHtml(current.example)}"` : ""}</div>
+            </div>
+            <div class="glass"></div>
+            <div class="word-layer">
+              <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:16px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
+              <div class="w speak-trigger">${escapeHtml(current.word)}</div>
+              <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
+              <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
+            </div>
           </div>
-          <div class="glass"></div>
-          <div class="word-layer">
-            <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:16px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
-            <div class="w speak-trigger">${escapeHtml(current.word)}</div>
-            <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
-            <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
-          </div>
+          <div class="swipe-glow" id="swipeGlow"></div>
+          <div class="stamp" id="cardStamp"></div>
         </div>
       </div>
 
@@ -756,8 +763,47 @@ function renderFlashcard(root) {
 
     const againBtn = el.querySelector(".again");
     const gotItBtn = el.querySelector(".got-it");
-    if (againBtn) againBtn.addEventListener("click", (e) => { e.stopPropagation(); next(current, false); });
-    if (gotItBtn) gotItBtn.addEventListener("click", (e) => { e.stopPropagation(); next(current, true); });
+    if (againBtn) againBtn.addEventListener("click", (e) => { e.stopPropagation(); rate(current, false); });
+    if (gotItBtn) gotItBtn.addEventListener("click", (e) => { e.stopPropagation(); rate(current, true); });
+  }
+
+  function rate(word, knew) {
+    if (busy) return;
+    busy = true;
+
+    const cardEl = el.querySelector("#flipCard");
+    const glowEl = el.querySelector("#swipeGlow");
+    const stampEl = el.querySelector("#cardStamp");
+    const l1 = el.querySelector(".stack-card.l1");
+    const l2 = el.querySelector(".stack-card.l2");
+
+    flipped = false;
+    if (cardEl) cardEl.classList.remove("revealed");
+    if (stampEl) {
+      stampEl.textContent = knew ? "✓" : "✗";
+      stampEl.className = "stamp go " + (knew ? "correct" : "wrong");
+    }
+    if (glowEl) glowEl.className = "swipe-glow " + (knew ? "flash-green" : "flash-red");
+
+    setTimeout(() => {
+      if (cardEl) cardEl.classList.add(knew ? "swipe-out-right" : "swipe-out-left");
+      if (l1) l1.classList.add("advance");
+      if (l2) l2.classList.add("advance");
+    }, 150);
+
+    setTimeout(() => {
+      next(word, knew);
+      const newCardEl = el.querySelector("#flipCard");
+      if (newCardEl) {
+        newCardEl.classList.add("card-enter");
+        void newCardEl.offsetWidth;
+        newCardEl.classList.remove("card-enter");
+        newCardEl.classList.add("card-enter-active");
+        setTimeout(() => { newCardEl.classList.remove("card-enter-active"); busy = false; }, 440);
+      } else {
+        busy = false;
+      }
+    }, 630);
   }
 
   function next(word, knew) {
