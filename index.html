@@ -8,7 +8,24 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app-body">
-  <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Mở menu">☰</button>
+  <div class="mobile-nav">
+    <div class="nav-pill" id="mNavPill">
+      <button class="mnav-btn active" id="mNavHome" data-section="dashboard"><span class="ico"></span><span class="dot"></span></button>
+      <button class="mnav-btn mnav-extra" id="mNavFlashcard" data-section="flashcard"><span class="ico"></span></button>
+      <button class="mnav-btn mnav-extra" id="mNavInbox" data-section="inbox"><span class="ico"></span></button>
+      <button class="mnav-btn mnav-extra" id="mNavMore"><span class="ico"></span></button>
+    </div>
+    <button class="mnav-add" id="mNavAdd">+</button>
+    <div class="mnav-scrim" id="mNavScrim"></div>
+    <div class="mnav-sheet" id="mNavSheet">
+      <div class="mnav-sheet-handle"></div>
+      <button class="mnav-sheet-item" data-section="writing"><span class="ico"></span>Luyện viết</button>
+      <button class="mnav-sheet-item" data-section="quiz"><span class="ico"></span>Quiz</button>
+      <button class="mnav-sheet-item" data-section="progress"><span class="ico"></span>Tiến độ</button>
+      <button class="mnav-sheet-item" id="mNavProfile">Hồ sơ</button>
+      <button class="mnav-sheet-item danger" id="mNavLogout">Đăng xuất</button>
+    </div>
+  </div>
 
   <div class="app-shell">
     <nav class="sidebar" id="sidebar">
