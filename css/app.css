@@ -462,6 +462,21 @@ input,textarea{font-family:inherit;}
 .flip-card.revealed .word-layer .tip{opacity:0;}
 .meaning-layer{padding:52px 40px 36px;}
 
+@media (max-width:760px){
+  .word-layer{padding:18px;}
+  .word-layer .w{font-size:26px;letter-spacing:-.8px;}
+  .word-layer .ph{font-size:12.5px;margin-top:6px;}
+  .word-layer .tip{margin-top:12px;font-size:10px;}
+  .word-layer .tag-pill{margin-bottom:8px !important;}
+  .meaning-layer{padding:30px 18px 14px;}
+  .meaning-layer .meaning{font-size:14.5px;}
+  .meaning-layer .divider{margin:8px 0;}
+  .meaning-layer .example{font-size:11px;line-height:1.4;}
+  .flip-card.revealed .word-layer .tag-pill{transform:translateY(-20px) scale(.8);}
+  .flip-card.revealed .word-layer .w{transform:translateY(-30px) scale(.72);}
+  .flip-card.revealed .word-layer .ph{transform:translateY(-30px);}
+}
+
 /* ---------- deck stack behind the front card ---------- */
 .deck-wrap{position:relative;aspect-ratio:63/40;}
 .stack-card{
