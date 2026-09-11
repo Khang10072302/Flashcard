@@ -690,6 +690,8 @@ input,textarea{font-family:inherit;}
 @media (max-width:640px){
   .dash-grid{grid-template-columns:1fr;}
   .dash-quest,.dash-vocab-group,.dash-flashcard,.dash-writing,.dash-quiz,.dash-progress{grid-column:1/2;}
+  .dash-vocab-group{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .dash-vocab-group .dash-card{flex:none;}
 }
 
 /* Lịch học (heatmap) */
