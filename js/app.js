@@ -354,6 +354,15 @@ function renderDashboard(root) {
               <div class="dash-card-num" style="color:#FF9F0A;">${allWords.length - mastered}</div>
             </div>
           </button>
+          <button class="dash-card" data-goto="inbox">
+            <div class="dash-card-inner">
+              <div class="dash-card-head">
+                <div class="dash-card-icon" style="background:#7B5CE61A;color:#7B5CE6;">🔥</div>
+              </div>
+              <div class="dash-card-label">Streak cao nhất</div>
+              <div class="dash-card-num" style="color:#7B5CE6;">${topWord ? (topWord.streak || 0) : 0}</div>
+            </div>
+          </button>
         </div>
 
         <button class="dash-card dash-flashcard" data-goto="flashcard">
