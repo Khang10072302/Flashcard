@@ -1,6 +1,6 @@
 import { requireAuth, wireLogout } from "./auth-guard.js";
 import { auth } from "./firebase-init.js";
-import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult } from "./db.js";
+import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult, listenActivity, logQuizCompleted } from "./db.js";
 import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
@@ -19,6 +19,7 @@ const ICONS = {
 let uid = null;
 let allWords = [];
 let userProfile = null;
+let activityMap = {};
 let section = "dashboard";
 let editingId = null;
 
@@ -36,6 +37,12 @@ async function init() {
   wireBrandIconFallback();
   listenWords(uid, onWordsChange);
   listenUserProfile(uid, onProfileChange);
+  listenActivity(uid, onActivityChange);
+}
+
+function onActivityChange(map) {
+  activityMap = map;
+  if (section === "dashboard" || section === "progress") render();
 }
 
 function onProfileChange(profile) {
@@ -206,11 +213,6 @@ function render() {
    DASHBOARD — tổng quan: Today's Quest, xem nhanh các mục, lịch học
    ============================================================ */
 const HEAT_COLORS = ["#EAEDF0", "#BAD5F5", "#5BA4F5", "#1A73E8", "#0071E3"];
-// NOTE: dữ liệu lịch học minh họa (ngẫu nhiên) — chưa gắn với lịch sử học thật theo từng ngày.
-const HEATMAP_DATA = Array.from({ length: 16 * 7 }, () => {
-  const v = Math.random();
-  return v > 0.75 ? 4 : v > 0.55 ? 3 : v > 0.35 ? 2 : v > 0.18 ? 1 : 0;
-});
 
 let dashQuests = [
   { id: "fc", label: "Ôn Flashcard", target: 2, done: 0, icon: "🃏", color: "#5E5CE6", section: "flashcard" },
@@ -227,47 +229,191 @@ function greetingText() {
   return "Chào buổi tối";
 }
 
-function monthLabels() {
-  const now = new Date();
-  const labels = [];
-  for (let i = 3; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    labels.push(d.toLocaleDateString("vi-VN", { month: "short" }));
-  }
-  return labels;
+/* ============================================================
+   "Chuỗi ngày học" — biểu đồ hoạt động thật, dựa trên activityMap
+   (lấy từ Firestore users/{uid}/activity/{YYYY-MM-DD}).
+   Dùng chung cho Dashboard và trang Tiến độ, mỗi nơi tự mount riêng
+   qua mountHeatmap() vì cần dropdown + tooltip tương tác.
+   ============================================================ */
+let heatmapViewMode = "12m"; // "12m" hoặc năm dạng chuỗi, vd "2026"
+
+function dateKeyUTC(d) {
+  return d.toISOString().slice(0, 10);
 }
 
-// Dùng chung cho Dashboard ("Chuỗi ngày học") và trang Tiến độ — cùng 1 dữ liệu,
-// cùng 1 giao diện, để 2 nơi luôn khớp nhau (Dashboard chỉ là bản xem nhanh của Tiến độ).
-function heatmapPanelHtml() {
+function activityTotal(stat) {
+  if (!stat) return 0;
+  return (stat.flashcard || 0) + (stat.writing || 0) + (stat.quiz || 0);
+}
+
+function activityLevel(stat) {
+  const total = activityTotal(stat);
+  if (total <= 0) return 0;
+  if (total <= 2) return 1;
+  if (total <= 5) return 2;
+  if (total <= 10) return 3;
+  return 4;
+}
+
+// Dựng lưới các cột-tuần (mỗi cột 7 ô Chủ nhật->Thứ 7) cho khoảng thời gian cần hiển thị.
+function buildHeatmapWeeks(mode) {
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  let rangeStart, rangeEnd, showMonths;
+  if (mode === "12m") {
+    rangeEnd = todayUTC;
+    rangeStart = new Date(todayUTC);
+    rangeStart.setUTCDate(rangeStart.getUTCDate() - 364);
+    showMonths = false;
+  } else {
+    const year = parseInt(mode, 10);
+    rangeStart = new Date(Date.UTC(year, 0, 1));
+    rangeEnd = new Date(Date.UTC(year, 11, 31));
+    showMonths = true;
+  }
+
+  const gridStart = new Date(rangeStart);
+  gridStart.setUTCDate(gridStart.getUTCDate() - gridStart.getUTCDay());
+  const gridEnd = new Date(rangeEnd);
+  gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - gridEnd.getUTCDay()));
+
+  const weeks = [];
+  const monthTicks = [];
+  let lastMonth = -1;
+  let col = 0;
+  const cursor = new Date(gridStart);
+
+  while (cursor <= gridEnd) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      if (cursor < rangeStart || cursor > rangeEnd) {
+        week.push(null);
+      } else {
+        if (showMonths) {
+          const m = cursor.getUTCMonth();
+          if (m !== lastMonth && cursor.getUTCDate() <= 7) {
+            monthTicks.push({ col, month: m });
+            lastMonth = m;
+          }
+        }
+        week.push({ key: dateKeyUTC(cursor) });
+      }
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    weeks.push(week);
+    col++;
+  }
+
+  return { weeks, monthTicks, showMonths };
+}
+
+function heatTooltipHtml(key, stat) {
+  const d = new Date(`${key}T00:00:00Z`);
+  const dateStr = d.toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const lines = [];
+  if (stat?.flashcard) lines.push(`Flashcard: ${stat.flashcard} lần`);
+  if (stat?.mastered) lines.push(`Từ mới thuộc: ${stat.mastered}`);
+  if (stat?.quiz) lines.push(`Quiz: ${stat.quiz} lần`);
+  if (stat?.writing) lines.push(`Luyện viết: ${stat.writing} lần`);
   return `
-    <div class="heat-panel">
-      <div class="heat-head">
-        <div>
-          <div class="heat-title">Chuỗi ngày học</div>
-          <div class="heat-sub">${HEATMAP_DATA.filter((v) => v > 0).length} ngày hoạt động trong 16 tuần qua</div>
-        </div>
-        <div class="heat-legend">
-          <span>Ít</span>
-          ${HEAT_COLORS.map((c) => `<div class="heat-swatch" style="background:${c};"></div>`).join("")}
-          <span>Nhiều</span>
-        </div>
-      </div>
-      <div class="heat-months">${monthLabels().map((m) => `<span>${escapeHtml(m)}</span>`).join("")}</div>
-      <div class="heat-body">
-        <div class="heat-days">${["CN", "", "T3", "", "T5", "", "T7"].map((d) => `<span>${d}</span>`).join("")}</div>
-        ${Array.from({ length: 16 }, (_, w) => `
-          <div class="heat-col">
-            ${Array.from({ length: 7 }, (_, d) => {
-              const val = HEATMAP_DATA[w * 7 + d] ?? 0;
-              return `<div class="heat-cell" style="background:${HEAT_COLORS[val]};" title="${val} lần học"></div>`;
-            }).join("")}
-          </div>
-        `).join("")}
-      </div>
-    </div>
+    <div class="heat-tip-date">${escapeHtml(dateStr)}</div>
+    ${lines.length ? lines.map((l) => `<div class="heat-tip-line">${escapeHtml(l)}</div>`).join("") : `<div class="heat-tip-line muted">Không có hoạt động</div>`}
   `;
 }
+
+// Gắn 1 bảng "Chuỗi ngày học" đầy đủ (dropdown + lưới + tooltip) vào host.
+function mountHeatmap(host) {
+  const currentYear = new Date().getUTCFullYear();
+  const years = new Set([currentYear]);
+  Object.keys(activityMap).forEach((k) => years.add(parseInt(k.slice(0, 4), 10)));
+  const yearList = [...years].sort((a, b) => b - a);
+  if (heatmapViewMode !== "12m" && !yearList.includes(parseInt(heatmapViewMode, 10))) heatmapViewMode = "12m";
+
+  function paint() {
+    const { weeks, monthTicks, showMonths } = buildHeatmapWeeks(heatmapViewMode);
+    const totalCount = weeks.flat().filter(Boolean).reduce((sum, c) => sum + activityTotal(activityMap[c.key]), 0);
+    const cellStep = 16; // 13px ô + 3px khoảng cách, dùng để canh label tháng
+
+    host.innerHTML = `
+      <div class="heat-panel">
+        <div class="heat-controls">
+          <select class="heat-select" id="heatSelect">
+            <option value="12m">12 tháng gần nhất</option>
+            ${yearList.map((y) => `<option value="${y}">${y}</option>`).join("")}
+          </select>
+          <div class="heat-total">${totalCount} lượt học</div>
+          <div class="heat-legend">
+            <span>Ít</span>
+            ${HEAT_COLORS.map((c) => `<div class="heat-swatch" style="background:${c};"></div>`).join("")}
+            <span>Nhiều</span>
+          </div>
+        </div>
+
+        <div class="heat-grid-wrap">
+          ${showMonths ? `
+            <div class="heat-month-row">
+              <div class="heat-daylabels-spacer"></div>
+              <div class="heat-months-track" style="width:${weeks.length * cellStep}px;">
+                ${monthTicks.map((t) => `<span style="left:${t.col * cellStep}px;">${MONTH_LABELS_VI[t.month]}</span>`).join("")}
+              </div>
+            </div>
+          ` : ""}
+          <div class="heat-body-row">
+            <div class="heat-daylabels">
+              ${["", "T2", "", "T4", "", "T6", ""].map((l) => `<span>${l}</span>`).join("")}
+            </div>
+            <div class="heat-weeks">
+              ${weeks.map((week) => `
+                <div class="heat-col">
+                  ${week.map((cell) => {
+                    if (!cell) return `<div class="heat-cell heat-cell-empty"></div>`;
+                    const level = activityLevel(activityMap[cell.key]);
+                    return `<div class="heat-cell" data-key="${cell.key}" style="background:${HEAT_COLORS[level]};"></div>`;
+                  }).join("")}
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+
+        <div class="heat-note">Dữ liệu hoạt động dùng giờ UTC.</div>
+      </div>
+    `;
+
+    host.querySelector("#heatSelect").value = heatmapViewMode;
+    host.querySelector("#heatSelect").addEventListener("change", (e) => {
+      heatmapViewMode = e.target.value;
+      paint();
+    });
+
+    let tooltip = document.getElementById("heatTooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "heatTooltip";
+      tooltip.className = "heat-tooltip";
+      document.body.appendChild(tooltip);
+    }
+    host.querySelectorAll(".heat-cell[data-key]").forEach((cellEl) => {
+      cellEl.addEventListener("mouseenter", () => {
+        const key = cellEl.dataset.key;
+        tooltip.innerHTML = heatTooltipHtml(key, activityMap[key]);
+        tooltip.style.display = "block";
+        const rect = cellEl.getBoundingClientRect();
+        const tw = tooltip.offsetWidth;
+        let left = rect.left + rect.width / 2 - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${rect.top - tooltip.offsetHeight - 8}px`;
+      });
+      cellEl.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+    });
+  }
+
+  paint();
+}
+
+const MONTH_LABELS_VI = ["Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12"];
 
 function renderDashboard(root) {
   const el = document.createElement("div");
@@ -406,8 +552,10 @@ function renderDashboard(root) {
         </button>
       </div>
 
-      ${heatmapPanelHtml()}
+      <div id="heatmapHost"></div>
     `;
+
+    mountHeatmap(el.querySelector("#heatmapHost"));
 
     el.querySelectorAll(".quest-check").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1066,8 +1214,10 @@ function renderQuiz(root) {
     });
     const nextBtn = el.querySelector("#nextQBtn");
     if (nextBtn) nextBtn.addEventListener("click", () => {
-      if (qIndex + 1 >= questions.length) { done = true; }
-      else { qIndex++; selected = null; }
+      if (qIndex + 1 >= questions.length) {
+        done = true;
+        logQuizCompleted(uid);
+      } else { qIndex++; selected = null; }
       paint();
     });
   }
@@ -1127,8 +1277,10 @@ function renderProgress(root) {
       </div>
     </div>
 
-    ${heatmapPanelHtml()}
+    <div id="heatmapHost"></div>
   `;
+
+  mountHeatmap(el.querySelector("#heatmapHost"));
 }
 
 /* ============================================================
