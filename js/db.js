@@ -11,6 +11,36 @@ function profileRef(uid) {
   return doc(db, "users", uid);
 }
 
+function activityCollectionRef(uid) {
+  return collection(db, "users", uid, "activity");
+}
+
+function activityRef(uid, dateKey) {
+  return doc(db, "users", uid, "activity", dateKey);
+}
+
+// Khóa ngày dùng giờ UTC (khớp với chú thích "All activity data is using UTC time").
+function todayKeyUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function logActivity(uid, patch) {
+  return setDoc(activityRef(uid, todayKeyUTC()), patch, { merge: true });
+}
+
+// Lắng nghe toàn bộ lịch sử hoạt động — trả về map { "YYYY-MM-DD": {flashcard,mastered,writing,quiz} }
+export function listenActivity(uid, onChange) {
+  return onSnapshot(activityCollectionRef(uid), (snap) => {
+    const map = {};
+    snap.forEach((d) => { map[d.id] = d.data(); });
+    onChange(map);
+  });
+}
+
+export function logQuizCompleted(uid) {
+  return logActivity(uid, { quiz: increment(1) });
+}
+
 export function listenWords(uid, onChange) {
   const q = query(wordsRef(uid), orderBy("addedAt", "desc"));
   return onSnapshot(q, (snap) => {
@@ -50,8 +80,11 @@ export function deleteWord(uid, wordId) {
 
 // Ghi lại 1 lần ôn Flashcard: +1 "đã học", +1 "thuộc"/"quên", và cập nhật streak
 // (streak reset về 0 nếu sai — dùng để xếp hạng "chưa thuộc/có thể quên/đã thuộc").
+// Đồng thời ghi vào log hoạt động theo ngày (cho biểu đồ "Chuỗi ngày học").
 export function recordFlashcardResult(uid, wordId, knew, currentStreak) {
   const newStreak = knew ? (currentStreak || 0) + 1 : 0;
+  const justMastered = newStreak >= 10 && (currentStreak || 0) < 10;
+  logActivity(uid, { flashcard: increment(1), mastered: increment(justMastered ? 1 : 0) });
   return updateDoc(doc(db, "users", uid, "words", wordId), {
     flashcardSeen: increment(1),
     flashcardCorrect: increment(knew ? 1 : 0),
@@ -65,6 +98,7 @@ export function recordFlashcardResult(uid, wordId, knew, currentStreak) {
 // (thuộc nghĩa và viết đúng chính tả là 2 kỹ năng khác nhau, không dùng chung streak).
 export function recordWritingResult(uid, wordId, correct, currentWritingStreak) {
   const newStreak = correct ? (currentWritingStreak || 0) + 1 : 0;
+  logActivity(uid, { writing: increment(1) });
   return updateDoc(doc(db, "users", uid, "words", wordId), {
     writingSeen: increment(1),
     writingCorrect: increment(correct ? 1 : 0),
