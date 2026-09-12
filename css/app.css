@@ -695,24 +695,46 @@ input,textarea{font-family:inherit;}
 }
 
 /* Lịch học (heatmap) */
-.heat-panel{background:#fff;border-radius:18px;border:1px solid var(--line);padding:24px 28px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-.heat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-.heat-title{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.3px;}
-.heat-sub{font-size:13px;color:var(--ink-soft);margin-top:2px;}
-.heat-legend{display:flex;align-items:center;gap:5px;}
+.heat-panel{background:#fff;border-radius:18px;border:1px solid var(--line);padding:24px 28px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow-x:auto;}
+.heat-controls{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.heat-select{
+  padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);
+  color:var(--ink);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+}
+.heat-total{font-size:13px;color:var(--ink-soft);}
+.heat-legend{display:flex;align-items:center;gap:5px;margin-left:auto;}
 .heat-legend span{font-size:11px;color:var(--ink-soft);}
 .heat-swatch{width:12px;height:12px;border-radius:3px;}
-.heat-months{display:flex;padding-left:26px;margin-bottom:4px;}
-.heat-months span{flex:1;font-size:11px;color:var(--ink-soft);font-weight:500;}
-.heat-body{display:flex;gap:4px;}
-.heat-days{display:flex;flex-direction:column;gap:3px;margin-right:6px;}
-.heat-days span{height:14px;font-size:10px;color:var(--ink-soft);line-height:14px;}
+
+.heat-grid-wrap{min-width:max-content;}
+.heat-month-row{display:flex;margin-bottom:4px;}
+.heat-daylabels-spacer{width:26px;flex-shrink:0;}
+.heat-months-track{position:relative;height:14px;}
+.heat-months-track span{position:absolute;top:0;font-size:11px;color:var(--ink-soft);font-weight:500;}
+
+.heat-body-row{display:flex;}
+.heat-daylabels{display:flex;flex-direction:column;gap:3px;margin-right:6px;width:20px;flex-shrink:0;}
+.heat-daylabels span{height:13px;font-size:10px;color:var(--ink-soft);line-height:13px;}
+.heat-weeks{display:flex;gap:3px;}
 .heat-col{display:flex;flex-direction:column;gap:3px;}
-.heat-cell{width:14px;height:14px;border-radius:3px;transition:transform .1s;cursor:default;}
+.heat-cell{width:13px;height:13px;border-radius:3px;transition:transform .1s;cursor:default;}
 .heat-cell:hover{transform:scale(1.3);}
+.heat-cell-empty{background:transparent;cursor:default;}
+.heat-cell-empty:hover{transform:none;}
+
+.heat-note{font-size:11px;color:var(--ink-dim);margin-top:14px;text-align:center;}
+
+.heat-tooltip{
+  display:none;position:fixed;z-index:150;
+  background:#1D1D1F;color:#fff;padding:8px 12px;border-radius:8px;
+  font-size:12px;line-height:1.5;box-shadow:0 8px 20px rgba(0,0,0,.25);
+  pointer-events:none;white-space:nowrap;
+}
+.heat-tip-date{font-weight:600;margin-bottom:2px;}
+.heat-tip-line.muted{color:#8E8E93;}
+
 @media (max-width:640px){
-  .heat-months,.heat-days{display:none;}
-  .heat-body{overflow-x:auto;}
+  .heat-legend{margin-left:0;width:100%;order:3;}
 }
 
 /* ---------- profile (edit profile, kiểu Pinterest) ---------- */
