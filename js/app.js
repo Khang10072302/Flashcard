@@ -1177,74 +1177,136 @@ function renderQuiz(root) {
   let qIndex = 0;
   let selected = null;
   let score = 0;
-  let done = false;
+  let busy = false;
 
-  function paint() {
-    if (done) {
-      el.className = "section w-quiz-done";
-      const pct = Math.round((score / questions.length) * 100);
-      const color = pct >= 80 ? "var(--green)" : pct >= 50 ? "var(--orange)" : "var(--red)";
-      const msg = pct === 100 ? "Điểm tuyệt đối! 🎉" : pct >= 80 ? "Làm tốt lắm! 👏" : pct >= 50 ? "Khá ổn, luyện thêm nhé." : "Đừng nản — ôn lại rồi thử lại!";
-      el.innerHTML = `
-        <div class="quiz-score" style="color:${color};">${pct}%</div>
-        <div class="quiz-score-label">${score} / ${questions.length} câu đúng</div>
-        <div class="quiz-score-msg">${msg}</div>
-        <button class="pbtn" id="retryBtn" style="margin-top:32px;">Làm lại</button>
-      `;
-      el.querySelector("#retryBtn").addEventListener("click", () => renderQuiz(root));
-      return;
-    }
+  el.innerHTML = `
+    <div class="section-head">
+      <h1>Quiz</h1>
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" id="quizProgFill"></div></div>
+        <span class="progress-count" id="quizProgCount"></span>
+      </div>
+    </div>
 
-    el.className = "section w-quiz";
-    const current = questions[qIndex];
-    el.innerHTML = `
-      <div class="section-head">
-        <h1>Quiz</h1>
-        <div class="progress-row">
-          <div class="progress-track"><div class="progress-fill" style="width:${((qIndex + 1) / questions.length) * 100}%;"></div></div>
-          <span class="progress-count">${qIndex + 1}/${questions.length}</span>
+    <div class="quiz-deck-wrap" id="quizDeckWrap">
+      <div class="stack-card l2"></div>
+      <div class="stack-card l1"></div>
+      <div class="quiz-tray" id="quizTray">
+        <div class="quiz-inner">
+          <div class="level-badge"><img id="quizGem" src="" alt=""><span id="quizLevelTxt"></span></div>
+          <div class="quiz-lbl">TỪ NÀY NGHĨA LÀ GÌ?</div>
+          <div class="quiz-word" id="quizWord"></div>
+          <div class="quiz-ph" id="quizPh"></div>
+          <div class="quiz-choices" id="quizChoices"></div>
         </div>
+        <div class="swipe-glow" id="quizGlow"></div>
+        <div class="stamp" id="quizStamp"></div>
       </div>
+    </div>
 
-      <div class="quiz-card">
-        <div class="lbl">TỪ NÀY NGHĨA LÀ GÌ?</div>
-        <div class="w">${escapeHtml(current.word.word)}</div>
-        <div class="ph">${escapeHtml(current.word.phonetic || "")}</div>
-      </div>
+    <button class="pbtn block quiz-next-btn" id="nextQBtn" style="margin-top:20px;"></button>
+  `;
 
-      <div class="quiz-choices">
-        ${current.choices.map((c, i) => {
-          let cls = "";
-          if (selected) {
-            if (c === current.answer) cls = "correct";
-            else if (c === selected) cls = "wrong";
-          }
-          return `<button class="quiz-choice ${cls}" data-c="${escapeAttr(c)}"><span class="letter">${String.fromCharCode(65 + i)}.</span>${escapeHtml(c)}</button>`;
-        }).join("")}
-      </div>
+  const tray = el.querySelector("#quizTray");
+  const glow = el.querySelector("#quizGlow");
+  const stamp = el.querySelector("#quizStamp");
+  const nextBtn = el.querySelector("#nextQBtn");
+  const l1 = el.querySelector(".stack-card.l1");
+  const l2 = el.querySelector(".stack-card.l2");
 
-      ${selected ? `<button class="pbtn block" id="nextQBtn" style="margin-top:16px;">${qIndex + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp theo →"}</button>` : ""}
-    `;
+  function renderQuestion() {
+    const current = questions[qIndex];
+    el.querySelector("#quizGem").src = GEMS[current.word.level] || GEMS.A1;
+    el.querySelector("#quizLevelTxt").textContent = LEVEL_LABEL[current.word.level] || "A1";
+    el.querySelector("#quizWord").textContent = current.word.word;
+    el.querySelector("#quizPh").textContent = current.word.phonetic || "";
+    el.querySelector("#quizProgFill").style.width = ((qIndex + 1) / questions.length) * 100 + "%";
+    el.querySelector("#quizProgCount").textContent = `${qIndex + 1}/${questions.length}`;
 
-    el.querySelectorAll(".quiz-choice").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (selected) return;
-        selected = btn.dataset.c;
-        if (selected === current.answer) score++;
-        paint();
-      });
+    const wrap = el.querySelector("#quizChoices");
+    wrap.innerHTML = "";
+    current.choices.forEach((c, i) => {
+      const b = document.createElement("button");
+      b.className = "quiz-choice";
+      b.innerHTML = `<span class="letter">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(c)}</span><span class="mark"></span>`;
+      b.addEventListener("click", () => pick(b, c, current));
+      wrap.appendChild(b);
     });
-    const nextBtn = el.querySelector("#nextQBtn");
-    if (nextBtn) nextBtn.addEventListener("click", () => {
-      if (qIndex + 1 >= questions.length) {
-        done = true;
-        logQuizCompleted(uid);
-      } else { qIndex++; selected = null; }
-      paint();
-    });
+
+    selected = null;
+    nextBtn.classList.remove("show");
   }
 
-  paint();
+  function pick(btn, choice, current) {
+    if (selected || busy) return;
+    selected = choice;
+    const correct = choice === current.answer;
+    if (correct) score++;
+
+    el.querySelectorAll(".quiz-choice").forEach((b) => {
+      const txt = b.querySelector("span:nth-child(2)").textContent;
+      if (txt === current.answer) { b.classList.add("correct"); b.querySelector(".mark").textContent = "✓"; }
+      else if (b === btn) { b.classList.add("wrong"); b.querySelector(".mark").textContent = "✗"; }
+    });
+
+    stamp.textContent = correct ? "✓" : "✗";
+    stamp.className = "stamp go " + (correct ? "correct" : "wrong");
+    glow.className = "swipe-glow " + (correct ? "flash-green" : "flash-red");
+
+    nextBtn.textContent = qIndex + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp theo →";
+    setTimeout(() => nextBtn.classList.add("show"), 200);
+  }
+
+  nextBtn.addEventListener("click", () => {
+    if (busy || !selected) return;
+    busy = true;
+    const isLast = qIndex + 1 >= questions.length;
+    const correctPick = selected === questions[qIndex].answer;
+    const dir = correctPick ? "swipe-out-right" : "swipe-out-left";
+
+    tray.classList.add(dir);
+    l1.classList.add("advance");
+    l2.classList.add("advance");
+
+    setTimeout(() => {
+      stamp.className = "stamp";
+      glow.className = "swipe-glow";
+      l1.classList.remove("advance");
+      l2.classList.remove("advance");
+      tray.classList.remove("swipe-out-right", "swipe-out-left");
+
+      if (isLast) {
+        logQuizCompleted(uid);
+        showDone();
+        busy = false;
+        return;
+      }
+      qIndex++;
+      renderQuestion();
+
+      tray.classList.add("card-enter");
+      void tray.offsetWidth;
+      tray.classList.remove("card-enter");
+      tray.classList.add("card-enter-active");
+      setTimeout(() => { tray.classList.remove("card-enter-active"); busy = false; }, 440);
+    }, 480);
+  });
+
+  function showDone() {
+    el.className = "section w-quiz-done";
+    const pct = Math.round((score / questions.length) * 100);
+    const color = pct >= 80 ? "var(--green)" : pct >= 50 ? "var(--orange)" : "var(--red)";
+    const msg = pct === 100 ? "Điểm tuyệt đối! 🎉" : pct >= 80 ? "Làm tốt lắm! 👏" : pct >= 50 ? "Khá ổn, luyện thêm nhé." : "Đừng nản — ôn lại rồi thử lại!";
+    el.innerHTML = `
+      <div class="quiz-score" style="color:${color};">${pct}%</div>
+      <div class="quiz-score-label">${score} / ${questions.length} câu đúng</div>
+      <div class="quiz-score-msg">${msg}</div>
+      <button class="pbtn" id="retryBtn" style="margin-top:32px;">Làm lại</button>
+    `;
+    el.querySelector("#retryBtn").addEventListener("click", () => renderQuiz(root));
+  }
+
+  renderQuestion();
 }
 
 /* ============================================================
