@@ -5,6 +5,9 @@ import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
 const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính từ", Adverb: "Trạng từ", Phrase: "Cụm từ", Idiom: "Thành ngữ" };
+const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "Idiom", "Sentence"];
+const LEVEL_LABEL = { A1: "A1", A2: "A2", B1: "B1", B2: "B2", C1: "C1", C2: "C2", Idiom: "Idiom", Sentence: "Sentence" };
+const GEMS = Object.fromEntries(LEVELS.map((lv) => [lv, `assets/gems/${lv}.svg`]));
 
 const ICONS = {
   dashboard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>`,
@@ -761,6 +764,7 @@ function wordCardHtml(w) {
 function openEditWordModal(word) {
   const root = document.getElementById("modalRoot");
   let selectedTag = word.tag || "Noun";
+  let selectedLevel = word.level || "A1";
 
   root.innerHTML = `
     <div class="modal-backdrop" id="editBackdrop">
@@ -791,6 +795,12 @@ function openEditWordModal(word) {
             ${TAGS.map((t) => `<button type="button" class="tag-choice ${t === selectedTag ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
           </div>
         </div>
+        <div class="f-field">
+          <label>Cấp độ</label>
+          <div class="tag-picker" id="editLevelPicker">
+            ${LEVELS.map((lv) => `<button type="button" class="tag-choice ${lv === selectedLevel ? "active" : ""}" data-lv="${lv}">${LEVEL_LABEL[lv]}</button>`).join("")}
+          </div>
+        </div>
         <div class="modal-meta">Thêm ${formatDate(word.addedAt)} · ngày sẽ không thay đổi</div>
         <div class="form-actions">
           <button class="save" id="editSaveBtn" type="button">Lưu thay đổi</button>
@@ -813,10 +823,17 @@ function openEditWordModal(word) {
   document.getElementById("modalCloseBtn").addEventListener("click", close);
   document.getElementById("editCancelBtn").addEventListener("click", close);
 
-  root.querySelectorAll(".tag-choice").forEach((btn) => {
+  document.getElementById("editTagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
     btn.addEventListener("click", () => {
       selectedTag = btn.dataset.t;
-      root.querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      document.getElementById("editTagPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+  });
+
+  document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedLevel = btn.dataset.lv;
+      document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
     });
   });
 
@@ -829,7 +846,8 @@ function openEditWordModal(word) {
       phonetic: document.getElementById("editPhoneticInput").value.trim(),
       meaning: newMeaning,
       example: document.getElementById("editExampleInput").value.trim(),
-      tag: selectedTag
+      tag: selectedTag,
+      level: selectedLevel
     });
     close();
   });
@@ -935,6 +953,10 @@ function renderFlashcard(root) {
               <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
               <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
             </div>
+          </div>
+          <div class="level-badge">
+            <img src="${GEMS[current.level] || GEMS.A1}" alt="${LEVEL_LABEL[current.level] || ""}">
+            <span>${LEVEL_LABEL[current.level] || "A1"}</span>
           </div>
           <div class="swipe-glow" id="swipeGlow"></div>
           <div class="stamp" id="cardStamp"></div>
@@ -1320,6 +1342,12 @@ function renderAdd(root) {
           ${TAGS.map((t) => `<button type="button" class="tag-choice ${((editing?.tag || "Noun") === t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
         </div>
       </div>
+      <div class="f-field">
+        <label>Cấp độ</label>
+        <div class="tag-picker" id="levelPicker">
+          ${LEVELS.map((lv) => `<button type="button" class="tag-choice ${((editing?.level || "A1") === lv) ? "active" : ""}" data-lv="${lv}">${LEVEL_LABEL[lv]}</button>`).join("")}
+        </div>
+      </div>
       <div class="form-actions">
         <button class="save" id="saveBtn">${editing ? "Lưu thay đổi" : "Thêm từ"}</button>
         <button class="cancel" id="cancelBtn" type="button">Hủy</button>
@@ -1329,10 +1357,18 @@ function renderAdd(root) {
   root.appendChild(el);
 
   let selectedTag = editing?.tag || "Noun";
-  el.querySelectorAll(".tag-choice").forEach((btn) => {
+  el.querySelector("#tagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
     btn.addEventListener("click", () => {
       selectedTag = btn.dataset.t;
-      el.querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      el.querySelector("#tagPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+  });
+
+  let selectedLevel = editing?.level || "A1";
+  el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedLevel = btn.dataset.lv;
+      el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
     });
   });
 
@@ -1347,7 +1383,8 @@ function renderAdd(root) {
       phonetic: el.querySelector("#fPhonetic").value.trim(),
       meaning,
       example: el.querySelector("#fExample").value.trim(),
-      tag: selectedTag
+      tag: selectedTag,
+      level: selectedLevel
     };
     const saveBtn = el.querySelector("#saveBtn");
     if (editing) {
