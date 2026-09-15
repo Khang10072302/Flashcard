@@ -1057,19 +1057,13 @@ function renderWriting(root) {
   let checked = false;
   let correct = false;
   let letterText = "";
+  let busy = false;
 
   const el = document.createElement("div");
   el.className = "section w-writing";
   root.appendChild(el);
 
-  function paint() {
-    if (deckIndex >= deck.length) {
-      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
-      deck = buildDeck(allWords, getWritingTier);
-      deckIndex = 0;
-    }
-    const current = deck[deckIndex];
-
+  function paintShell() {
     el.innerHTML = `
       <div class="section-head">
         <h1>Luyện viết</h1>
@@ -1083,76 +1077,149 @@ function renderWriting(root) {
 
       <div id="modeHost"></div>
     `;
-
     el.querySelectorAll(".mode-switch button").forEach((b) => {
-      b.addEventListener("click", () => { mode = b.dataset.m; paint(); });
+      b.addEventListener("click", () => { mode = b.dataset.m; paintShell(); });
     });
 
     const host = el.querySelector("#modeHost");
+    if (mode === "fill") paintFillCard(host); else paintLetterMode(host);
+  }
 
-    if (mode === "fill") {
+  function paintFillCard(host) {
+    if (deckIndex >= deck.length) {
+      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
+      deck = buildDeck(allWords, getWritingTier);
+      deckIndex = 0;
+    }
+
+    host.innerHTML = `
+      <div class="quiz-deck-wrap" id="wrDeckWrap">
+        <div class="stack-card l2"></div>
+        <div class="stack-card l1"></div>
+        <div class="quiz-tray" id="wrTray">
+          <div class="quiz-inner">
+            <div class="level-badge"><img id="wrGem" src="" alt=""><span id="wrLevelTxt"></span></div>
+            <div class="quiz-lbl">NGHĨA</div>
+            <div class="quiz-word" id="wrMeaning" style="font-size:22px;"></div>
+            <div class="wr-example" id="wrExample"></div>
+            <div class="wr-hints" id="wrHints"></div>
+            <div class="wr-answer-wrap">
+              <input class="wr-input" id="answerInput" placeholder="Gõ từ tiếng Anh..." autocomplete="off" autocapitalize="off" spellcheck="false">
+              <div class="wr-feedback" id="wrFeedback"></div>
+            </div>
+          </div>
+          <div class="swipe-glow" id="wrGlow"></div>
+          <div class="stamp" id="wrStamp"></div>
+        </div>
+      </div>
+      <button class="pbtn block quiz-next-btn show" id="wrActionBtn" style="margin-top:20px;">Kiểm tra</button>
+    `;
+
+    const tray = host.querySelector("#wrTray");
+    const glow = host.querySelector("#wrGlow");
+    const stamp = host.querySelector("#wrStamp");
+    const actionBtn = host.querySelector("#wrActionBtn");
+    const input = host.querySelector("#answerInput");
+    const l1 = host.querySelector(".stack-card.l1");
+    const l2 = host.querySelector(".stack-card.l2");
+
+    function fill() {
+      const current = deck[deckIndex];
+      host.querySelector("#wrGem").src = GEMS[current.level] || GEMS.A1;
+      host.querySelector("#wrLevelTxt").textContent = LEVEL_LABEL[current.level] || "A1";
+      host.querySelector("#wrMeaning").textContent = current.meaning || "";
       const blanked = current.example
         ? current.example.replace(new RegExp(escapeRegex(current.word), "ig"), "___________")
         : "";
-      host.innerHTML = `
-        <div class="hint-card">
-          <div class="lbl">NGHĨA</div>
-          <div class="meaning">${escapeHtml(current.meaning || "")}</div>
-          ${blanked ? `<div class="example">"${escapeHtml(blanked)}"</div>` : ""}
-          <div class="hint-row">
-            <div class="hint-item"><div class="lbl">PHÁT ÂM</div><div class="val">${escapeHtml(current.phonetic || "—")}</div></div>
-            <div class="hint-item"><div class="lbl">SỐ CHỮ CÁI</div><div class="val">${current.word.length} chữ</div></div>
-            <div class="hint-item"><div class="lbl">LOẠI TỪ</div><div class="val">${TAG_LABEL[current.tag] || current.tag || ""}</div></div>
-          </div>
-        </div>
-        <div class="answer-card ${checked ? (correct ? "ok" : "no") : ""}">
-          <input type="text" id="answerInput" placeholder="Gõ từ tiếng Anh..." autocomplete="off" autocapitalize="off" spellcheck="false" ${checked ? "disabled" : ""}>
-          ${checked ? `<div class="answer-feedback ${correct ? "ok" : "no"}">${correct ? "✓ Chính xác!" : `✗ Đáp án là: ${escapeHtml(current.word)}`}</div>` : ""}
-        </div>
-        <div class="writing-actions">
-          ${!checked
-            ? `<button class="pbtn" id="checkBtn">Kiểm tra</button>`
-            : `<button class="pbtn" id="nextBtn">Từ tiếp theo →</button>`}
-        </div>
+      host.querySelector("#wrExample").textContent = blanked ? `"${blanked}"` : "";
+      host.querySelector("#wrHints").innerHTML = `
+        <div class="wr-hint"><div class="lbl">PHÁT ÂM</div><div class="val">${escapeHtml(current.phonetic || "—")}</div></div>
+        <div class="wr-hint"><div class="lbl">SỐ CHỮ CÁI</div><div class="val">${current.word.length} chữ</div></div>
+        <div class="wr-hint"><div class="lbl">LOẠI TỪ</div><div class="val">${TAG_LABEL[current.tag] || current.tag || ""}</div></div>
       `;
-
-      const input = host.querySelector("#answerInput");
-      if (input) {
-        input.focus();
-        input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !checked) doCheck(); });
-      }
-      const checkBtn = host.querySelector("#checkBtn");
-      if (checkBtn) checkBtn.addEventListener("click", doCheck);
-      const nextBtn = host.querySelector("#nextBtn");
-      if (nextBtn) nextBtn.addEventListener("click", () => {
-        deckIndex++; checked = false; paint();
-      });
-
-      function doCheck() {
-        const val = (input.value || "").trim().toLowerCase();
-        correct = val === current.word.trim().toLowerCase();
-        checked = true;
-        recordWritingResult(uid, current.id, correct, current.writingStreak || 0);
-        paint();
-      }
-    } else {
-      const wordCount = letterText.split(/\s+/).filter(Boolean).length;
-      host.innerHTML = `
-        <div class="letter-card">
-          <div class="words-hint">DÙNG NHỮNG TỪ NÀY: ${allWords.map((w) => escapeHtml(w.word)).join(" · ")}</div>
-          <textarea id="letterArea" placeholder="Viết một đoạn văn dùng các từ vựng ở trên...">${escapeHtml(letterText)}</textarea>
-        </div>
-        <div class="letter-count">${wordCount} từ đã viết</div>
-      `;
-      const area = host.querySelector("#letterArea");
-      area.addEventListener("input", (e) => {
-        letterText = e.target.value;
-        host.querySelector(".letter-count").textContent = `${letterText.split(/\s+/).filter(Boolean).length} từ đã viết`;
-      });
+      input.value = "";
+      input.disabled = false;
+      input.className = "wr-input";
+      host.querySelector("#wrFeedback").textContent = "";
+      host.querySelector("#wrFeedback").className = "wr-feedback";
+      actionBtn.textContent = "Kiểm tra";
+      checked = false;
+      input.focus();
     }
+
+    function doCheck() {
+      if (checked || busy) return;
+      const current = deck[deckIndex];
+      const val = (input.value || "").trim().toLowerCase();
+      correct = val === current.word.trim().toLowerCase();
+      checked = true;
+
+      input.disabled = true;
+      input.classList.add(correct ? "ok" : "no");
+      const fb = host.querySelector("#wrFeedback");
+      fb.textContent = correct ? "✓ Chính xác!" : `✗ Đáp án là: ${current.word}`;
+      fb.className = "wr-feedback " + (correct ? "ok" : "no");
+
+      stamp.textContent = correct ? "✓" : "✗";
+      stamp.className = "stamp go " + (correct ? "correct" : "wrong");
+      glow.className = "swipe-glow " + (correct ? "flash-green" : "flash-red");
+
+      recordWritingResult(uid, current.id, correct, current.writingStreak || 0);
+      actionBtn.textContent = "Từ tiếp theo →";
+    }
+
+    function doNext() {
+      if (busy) return;
+      busy = true;
+      const dir = correct ? "swipe-out-right" : "swipe-out-left";
+      tray.classList.add(dir);
+      l1.classList.add("advance");
+      l2.classList.add("advance");
+
+      setTimeout(() => {
+        stamp.className = "stamp";
+        glow.className = "swipe-glow";
+        l1.classList.remove("advance");
+        l2.classList.remove("advance");
+        tray.classList.remove("swipe-out-right", "swipe-out-left");
+
+        deckIndex++;
+        if (deckIndex >= deck.length) { deck = buildDeck(allWords, getWritingTier); deckIndex = 0; }
+        fill();
+
+        tray.classList.add("card-enter");
+        void tray.offsetWidth;
+        tray.classList.remove("card-enter");
+        tray.classList.add("card-enter-active");
+        setTimeout(() => { tray.classList.remove("card-enter-active"); busy = false; }, 440);
+      }, 480);
+    }
+
+    actionBtn.addEventListener("click", () => { if (!checked) doCheck(); else doNext(); });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !checked) doCheck(); });
+
+    fill();
   }
 
-  paint();
+  function paintLetterMode(host) {
+    const wordCount = letterText.split(/\s+/).filter(Boolean).length;
+    host.innerHTML = `
+      <div class="letter-tray">
+        <div class="letter-inner">
+          <div class="words-hint">DÙNG NHỮNG TỪ NÀY: ${allWords.map((w) => escapeHtml(w.word)).join(" · ")}</div>
+          <textarea id="letterArea" class="letter-area" placeholder="Viết một đoạn văn dùng các từ vựng ở trên...">${escapeHtml(letterText)}</textarea>
+        </div>
+      </div>
+      <div class="letter-count">${wordCount} từ đã viết</div>
+    `;
+    const area = host.querySelector("#letterArea");
+    area.addEventListener("input", (e) => {
+      letterText = e.target.value;
+      host.querySelector(".letter-count").textContent = `${letterText.split(/\s+/).filter(Boolean).length} từ đã viết`;
+    });
+  }
+
+  paintShell();
 }
 
 /* ============================================================
