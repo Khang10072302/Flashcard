@@ -773,9 +773,15 @@ function openEditWordModal(word) {
           <h2>Sửa từ</h2>
           <button class="modal-close" id="modalCloseBtn" type="button">✕</button>
         </div>
-        <div class="f-field">
-          <label>Từ *</label>
-          <input type="text" id="editWordInput" class="large" value="${escapeAttr(word.word)}">
+        <div class="f-row">
+          <div class="f-field f-word">
+            <label>Từ *</label>
+            <input type="text" id="editWordInput" class="large" value="${escapeAttr(word.word)}">
+          </div>
+          <div class="f-field f-prep">
+            <label>Prep</label>
+            <input type="text" id="editPrepInput" class="large" value="${escapeAttr(word.preposition || "")}">
+          </div>
         </div>
         <div class="f-field">
           <label>Phiên âm</label>
@@ -843,6 +849,7 @@ function openEditWordModal(word) {
     if (!newWord || !newMeaning) return;
     await updateWord(uid, word.id, {
       word: newWord,
+      preposition: document.getElementById("editPrepInput").value.trim(),
       phonetic: document.getElementById("editPhoneticInput").value.trim(),
       meaning: newMeaning,
       example: document.getElementById("editExampleInput").value.trim(),
@@ -949,7 +956,7 @@ function renderFlashcard(root) {
             <div class="glass"></div>
             <div class="word-layer">
               <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:16px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
-              <div class="w speak-trigger">${escapeHtml(current.word)}</div>
+              <div class="w-row speak-trigger"><span class="w">${escapeHtml(current.word)}</span>${current.preposition ? `<span class="w-prep">${escapeHtml(current.preposition)}</span>` : ""}</div>
               <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
               <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
             </div>
@@ -1262,7 +1269,7 @@ function renderQuiz(root) {
         <div class="quiz-inner">
           <div class="level-badge"><img id="quizGem" src="" alt=""><span id="quizLevelTxt"></span></div>
           <div class="quiz-lbl">TỪ NÀY NGHĨA LÀ GÌ?</div>
-          <div class="quiz-word" id="quizWord"></div>
+          <div class="quiz-word-row"><span class="quiz-word" id="quizWord"></span><span class="quiz-word-prep" id="quizWordPrep"></span></div>
           <div class="quiz-ph" id="quizPh"></div>
           <div class="quiz-choices" id="quizChoices"></div>
         </div>
@@ -1286,6 +1293,7 @@ function renderQuiz(root) {
     el.querySelector("#quizGem").src = GEMS[current.word.level] || GEMS.A1;
     el.querySelector("#quizLevelTxt").textContent = LEVEL_LABEL[current.word.level] || "A1";
     el.querySelector("#quizWord").textContent = current.word.word;
+    el.querySelector("#quizWordPrep").textContent = current.word.preposition || "";
     el.querySelector("#quizPh").textContent = current.word.phonetic || "";
     el.querySelector("#quizProgFill").style.width = ((qIndex + 1) / questions.length) * 100 + "%";
     el.querySelector("#quizProgCount").textContent = `${qIndex + 1}/${questions.length}`;
@@ -1295,7 +1303,7 @@ function renderQuiz(root) {
     current.choices.forEach((c, i) => {
       const b = document.createElement("button");
       b.className = "quiz-choice";
-      b.innerHTML = `<span class="letter">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(c)}</span><span class="mark"></span>`;
+      b.innerHTML = `<span class="choice-text">${escapeHtml(c)}</span><span class="mark"></span>`;
       b.addEventListener("click", () => pick(b, c, current));
       wrap.appendChild(b);
     });
@@ -1311,7 +1319,7 @@ function renderQuiz(root) {
     if (correct) score++;
 
     el.querySelectorAll(".quiz-choice").forEach((b) => {
-      const txt = b.querySelector("span:nth-child(2)").textContent;
+      const txt = b.querySelector(".choice-text").textContent;
       if (txt === current.answer) { b.classList.add("correct"); b.querySelector(".mark").textContent = "✓"; }
       else if (b === btn) { b.classList.add("wrong"); b.querySelector(".mark").textContent = "✗"; }
     });
@@ -1449,9 +1457,15 @@ function renderAdd(root) {
     </div>
 
     <div class="form-panel">
-      <div class="f-field">
-        <label>Từ *</label>
-        <input type="text" id="fWord" class="large" placeholder="vd. Ephemeral" value="${escapeAttr(editing?.word || "")}">
+      <div class="f-row">
+        <div class="f-field f-word">
+          <label>Từ *</label>
+          <input type="text" id="fWord" class="large" placeholder="vd. Ephemeral" value="${escapeAttr(editing?.word || "")}">
+        </div>
+        <div class="f-field f-prep">
+          <label>Prep</label>
+          <input type="text" id="fPrep" class="large" placeholder="up" value="${escapeAttr(editing?.preposition || "")}">
+        </div>
       </div>
       <div class="f-field">
         <label>Phiên âm</label>
@@ -1509,6 +1523,7 @@ function renderAdd(root) {
     if (!word || !meaning) return;
     const data = {
       word,
+      preposition: el.querySelector("#fPrep").value.trim(),
       phonetic: el.querySelector("#fPhonetic").value.trim(),
       meaning,
       example: el.querySelector("#fExample").value.trim(),
