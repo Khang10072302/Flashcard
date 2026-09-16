@@ -58,6 +58,7 @@ export function addWord(uid, data) {
     example: data.example || "",
     tag: data.tag || "Noun",
     level: data.level || "A1",
+    preposition: data.preposition || "",
     mastered: false,
     streak: 0,
     writingStreak: 0,
