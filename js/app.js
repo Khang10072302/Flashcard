@@ -8,6 +8,7 @@ const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính t
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "Idiom", "Sentence"];
 const LEVEL_LABEL = { A1: "A1", A2: "A2", B1: "B1", B2: "B2", C1: "C1", C2: "C2", Idiom: "Idiom", Sentence: "Sentence" };
 const GEMS = Object.fromEntries(LEVELS.map((lv) => [lv, `assets/gems/${lv}.svg`]));
+const LEVEL_AVATAR_SIZE = { A1: 12, A2: 16, B1: 19, B2: 23, C1: 26, C2: 30, Idiom: 33, Sentence: 37 };
 
 const ICONS = {
   dashboard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>`,
@@ -679,7 +680,7 @@ function wordCardHtml(w) {
     <div class="word-card" data-id="${w.id}" data-word="${escapeAttr(w.word)}">
       <button class="word-card-head" type="button">
         <div class="word-avatar ${w.mastered ? "mastered" : ""} speak-avatar" data-speak-word="${escapeAttr(w.word)}">
-          <span class="word-avatar-letter">${escapeHtml((w.word || "?")[0] || "?").toUpperCase()}</span>
+          <img class="word-avatar-gem" src="${GEMS[w.level] || GEMS.A1}" alt="${LEVEL_LABEL[w.level] || ""}" style="width:${LEVEL_AVATAR_SIZE[w.level] || 12}px;height:${LEVEL_AVATAR_SIZE[w.level] || 12}px;">
           <span class="word-avatar-speak">🔊</span>
         </div>
         <div class="word-card-main">
@@ -692,6 +693,7 @@ function wordCardHtml(w) {
           <div class="word-card-meaning">${escapeHtml(w.meaning || "")}</div>
         </div>
         <div class="word-card-right">
+          ${isExpanded ? `<span class="right-pill"><img src="${GEMS[w.level] || GEMS.A1}" alt="">${LEVEL_LABEL[w.level] || "A1"}</span>` : ""}
           ${w.streak ? `<span class="streak-badge">🔥${w.streak}</span>` : ""}
           <svg class="chev ${isExpanded ? "rot" : ""}" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="#C7C7CC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -1585,6 +1587,20 @@ function renderProfile(root) {
         <div class="f-field" style="margin-bottom:0;">
           <label>Tên hiển thị</label>
           <input type="text" id="fDisplayName" placeholder="Tên của bạn" value="${escapeAttr(displayName)}">
+        </div>
+      </div>
+
+      <div class="profile-name-panel">
+        <div class="f-field" style="margin-bottom:14px;">
+          <label>Cấp độ từ vựng</label>
+        </div>
+        <div class="level-legend">
+          ${LEVELS.map((lv) => `
+            <div class="level-legend-item">
+              <div class="level-legend-box"><img src="${GEMS[lv]}" alt="${LEVEL_LABEL[lv]}" style="width:${LEVEL_AVATAR_SIZE[lv]}px;height:${LEVEL_AVATAR_SIZE[lv]}px;"></div>
+              <div class="level-legend-lbl">${LEVEL_LABEL[lv]}</div>
+            </div>
+          `).join("")}
         </div>
       </div>
 
