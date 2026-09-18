@@ -8,7 +8,7 @@ const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính t
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "Idiom", "Sentence"];
 const LEVEL_LABEL = { A1: "A1", A2: "A2", B1: "B1", B2: "B2", C1: "C1", C2: "C2", Idiom: "Idiom", Sentence: "Sentence" };
 const GEMS = Object.fromEntries(LEVELS.map((lv) => [lv, `assets/gems/${lv}.svg`]));
-const LEVEL_AVATAR_SIZE = { A1: 12, A2: 16, B1: 19, B2: 23, C1: 26, C2: 30, Idiom: 33, Sentence: 37 };
+const LEVEL_AVATAR_SIZE = { A1: 12, A2: 16, B1: 19, B2: 23, C1: 26, C2: 28, Idiom: 30, Sentence: 32 };
 
 const ICONS = {
   dashboard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>`,
