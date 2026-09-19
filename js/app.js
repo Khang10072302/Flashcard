@@ -1,6 +1,6 @@
 import { requireAuth, wireLogout } from "./auth-guard.js";
 import { auth } from "./firebase-init.js";
-import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult, listenActivity, logQuizCompleted } from "./db.js";
+import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult, recordQuizResult, listenActivity, logQuizCompleted } from "./db.js";
 import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
@@ -1062,8 +1062,12 @@ function renderWriting(root) {
   }
 
   let mode = "fill";
+  let deckNumber = 1;
   let deck = buildDeck(allWords, getWritingTier);
   let deckIndex = 0;
+  let deckCorrect = 0;
+  let deckWrong = 0;
+  let deckDone = false;
   let checked = false;
   let correct = false;
   let letterText = "";
@@ -1074,6 +1078,34 @@ function renderWriting(root) {
   root.appendChild(el);
 
   function paintShell() {
+    if (deckDone) {
+      el.className = "section w-mid";
+      el.innerHTML = `
+        <div class="done-state">
+          <div class="emoji">🎉</div>
+          <h1>Hoàn thành Bộ ${deckNumber}!</h1>
+          <p>Bạn vừa luyện ${deck.length} từ.</p>
+          <div class="done-stats">
+            <div>Bạn viết đúng <b style="color:var(--green);">${deckCorrect}</b> từ</div>
+            <div>Bạn viết sai <b style="color:var(--red);">${deckWrong}</b> từ</div>
+          </div>
+          <button class="pbtn" id="nextDeckBtn" style="margin-top:24px;">Học bộ tiếp theo →</button>
+        </div>
+      `;
+      fireConfetti();
+      el.querySelector("#nextDeckBtn").addEventListener("click", () => {
+        deckNumber++;
+        deck = buildDeck(allWords, getWritingTier);
+        deckIndex = 0;
+        deckCorrect = 0;
+        deckWrong = 0;
+        deckDone = false;
+        paintShell();
+      });
+      return;
+    }
+
+    el.className = "section w-writing";
     el.innerHTML = `
       <div class="section-head">
         <h1>Luyện viết</h1>
@@ -1096,12 +1128,6 @@ function renderWriting(root) {
   }
 
   function paintFillCard(host) {
-    if (deckIndex >= deck.length) {
-      // Hết 1 bộ — tự động trộn bộ mới và học tiếp luôn, không dừng lại.
-      deck = buildDeck(allWords, getWritingTier);
-      deckIndex = 0;
-    }
-
     host.innerHTML = `
       <div class="quiz-deck-wrap" id="wrDeckWrap">
         <div class="stack-card l2"></div>
@@ -1175,18 +1201,28 @@ function renderWriting(root) {
       glow.className = "swipe-glow " + (correct ? "flash-green" : "flash-red");
 
       recordWritingResult(uid, current.id, correct, current.writingStreak || 0);
-      actionBtn.textContent = "Từ tiếp theo →";
+      if (correct) deckCorrect++; else deckWrong++;
+      actionBtn.textContent = qIndex_isLast() ? "Xem kết quả" : "Từ tiếp theo →";
     }
+
+    function qIndex_isLast() { return deckIndex + 1 >= deck.length; }
 
     function doNext() {
       if (busy) return;
       busy = true;
+      const isLast = qIndex_isLast();
       const dir = correct ? "swipe-out-right" : "swipe-out-left";
       tray.classList.add(dir);
       l1.classList.add("advance");
       l2.classList.add("advance");
 
       setTimeout(() => {
+        if (isLast) {
+          deckDone = true;
+          busy = false;
+          paintShell();
+          return;
+        }
         stamp.className = "stamp";
         glow.className = "swipe-glow";
         l1.classList.remove("advance");
@@ -1194,7 +1230,6 @@ function renderWriting(root) {
         tray.classList.remove("swipe-out-right", "swipe-out-left");
 
         deckIndex++;
-        if (deckIndex >= deck.length) { deck = buildDeck(allWords, getWritingTier); deckIndex = 0; }
         fill();
 
         tray.classList.add("card-enter");
@@ -1206,7 +1241,7 @@ function renderWriting(root) {
     }
 
     actionBtn.addEventListener("click", () => { if (!checked) doCheck(); else doNext(); });
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !checked) doCheck(); });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { if (!checked) doCheck(); else doNext(); } });
 
     fill();
   }
@@ -1245,146 +1280,177 @@ function renderQuiz(root) {
     return;
   }
 
-  const questions = allWords.map((w) => {
-    const others = shuffle(allWords.filter((x) => x.id !== w.id)).slice(0, 3);
-    const choices = shuffle([w.meaning, ...others.map((o) => o.meaning)]);
-    return { word: w, choices, answer: w.meaning };
-  });
-
+  let deckNumber = 1;
+  let deck = buildDeck(allWords, getQuizTier);
   let qIndex = 0;
   let selected = null;
-  let score = 0;
+  let deckCorrect = 0;
+  let deckWrong = 0;
+  let deckDone = false;
   let busy = false;
 
-  el.innerHTML = `
-    <div class="section-head">
-      <h1>Quiz</h1>
-      <div class="progress-row">
-        <div class="progress-track"><div class="progress-fill" id="quizProgFill"></div></div>
-        <span class="progress-count" id="quizProgCount"></span>
-      </div>
-    </div>
+  function makeQuestion(word) {
+    const others = shuffle(allWords.filter((x) => x.id !== word.id)).slice(0, 3);
+    const choices = shuffle([word.meaning, ...others.map((o) => o.meaning)]);
+    return { word, choices, answer: word.meaning };
+  }
 
-    <div class="quiz-deck-wrap" id="quizDeckWrap">
-      <div class="stack-card l2"></div>
-      <div class="stack-card l1"></div>
-      <div class="quiz-tray" id="quizTray">
-        <div class="quiz-inner">
-          <div class="level-badge"><img id="quizGem" src="" alt=""><span id="quizLevelTxt"></span></div>
-          <div class="quiz-lbl">TỪ NÀY NGHĨA LÀ GÌ?</div>
-          <div class="quiz-word-row"><span class="quiz-word" id="quizWord"></span><span class="quiz-word-prep" id="quizWordPrep"></span></div>
-          <div class="quiz-ph" id="quizPh"></div>
-          <div class="quiz-choices" id="quizChoices"></div>
+  function paint() {
+    if (deckDone) {
+      el.className = "section w-mid";
+      el.innerHTML = `
+        <div class="done-state">
+          <div class="emoji">🎉</div>
+          <h1>Hoàn thành Bộ ${deckNumber}!</h1>
+          <p>Bạn vừa làm ${deck.length} câu.</p>
+          <div class="done-stats">
+            <div>Bạn trả lời đúng <b style="color:var(--green);">${deckCorrect}</b> câu</div>
+            <div>Bạn trả lời sai <b style="color:var(--red);">${deckWrong}</b> câu</div>
+          </div>
+          <button class="pbtn" id="nextDeckBtn" style="margin-top:24px;">Học bộ tiếp theo →</button>
         </div>
-        <div class="swipe-glow" id="quizGlow"></div>
-        <div class="stamp" id="quizStamp"></div>
-      </div>
-    </div>
+      `;
+      fireConfetti();
+      el.querySelector("#nextDeckBtn").addEventListener("click", () => {
+        deckNumber++;
+        deck = buildDeck(allWords, getQuizTier);
+        qIndex = 0;
+        deckCorrect = 0;
+        deckWrong = 0;
+        deckDone = false;
+        paint();
+      });
+      return;
+    }
 
-    <button class="pbtn block quiz-next-btn" id="nextQBtn" style="margin-top:20px;"></button>
-  `;
-
-  const tray = el.querySelector("#quizTray");
-  const glow = el.querySelector("#quizGlow");
-  const stamp = el.querySelector("#quizStamp");
-  const nextBtn = el.querySelector("#nextQBtn");
-  const l1 = el.querySelector(".stack-card.l1");
-  const l2 = el.querySelector(".stack-card.l2");
-
-  function renderQuestion() {
-    const current = questions[qIndex];
-    el.querySelector("#quizGem").src = GEMS[current.word.level] || GEMS.A1;
-    el.querySelector("#quizLevelTxt").textContent = LEVEL_LABEL[current.word.level] || "A1";
-    el.querySelector("#quizWord").textContent = current.word.word;
-    el.querySelector("#quizWordPrep").textContent = current.word.preposition || "";
-    el.querySelector("#quizPh").textContent = current.word.phonetic || "";
-    el.querySelector("#quizProgFill").style.width = ((qIndex + 1) / questions.length) * 100 + "%";
-    el.querySelector("#quizProgCount").textContent = `${qIndex + 1}/${questions.length}`;
-
-    const wrap = el.querySelector("#quizChoices");
-    wrap.innerHTML = "";
-    current.choices.forEach((c, i) => {
-      const b = document.createElement("button");
-      b.className = "quiz-choice";
-      b.innerHTML = `<span class="choice-text">${escapeHtml(c)}</span><span class="mark"></span>`;
-      b.addEventListener("click", () => pick(b, c, current));
-      wrap.appendChild(b);
-    });
-
-    selected = null;
-    nextBtn.classList.remove("show");
-  }
-
-  function pick(btn, choice, current) {
-    if (selected || busy) return;
-    selected = choice;
-    const correct = choice === current.answer;
-    if (correct) score++;
-
-    el.querySelectorAll(".quiz-choice").forEach((b) => {
-      const txt = b.querySelector(".choice-text").textContent;
-      if (txt === current.answer) { b.classList.add("correct"); b.querySelector(".mark").textContent = "✓"; }
-      else if (b === btn) { b.classList.add("wrong"); b.querySelector(".mark").textContent = "✗"; }
-    });
-
-    stamp.textContent = correct ? "✓" : "✗";
-    stamp.className = "stamp go " + (correct ? "correct" : "wrong");
-    glow.className = "swipe-glow " + (correct ? "flash-green" : "flash-red");
-
-    nextBtn.textContent = qIndex + 1 >= questions.length ? "Xem kết quả" : "Câu tiếp theo →";
-    setTimeout(() => nextBtn.classList.add("show"), 200);
-  }
-
-  nextBtn.addEventListener("click", () => {
-    if (busy || !selected) return;
-    busy = true;
-    const isLast = qIndex + 1 >= questions.length;
-    const correctPick = selected === questions[qIndex].answer;
-    const dir = correctPick ? "swipe-out-right" : "swipe-out-left";
-
-    tray.classList.add(dir);
-    l1.classList.add("advance");
-    l2.classList.add("advance");
-
-    setTimeout(() => {
-      stamp.className = "stamp";
-      glow.className = "swipe-glow";
-      l1.classList.remove("advance");
-      l2.classList.remove("advance");
-      tray.classList.remove("swipe-out-right", "swipe-out-left");
-
-      if (isLast) {
-        logQuizCompleted(uid);
-        showDone();
-        busy = false;
-        return;
-      }
-      qIndex++;
-      renderQuestion();
-
-      tray.classList.add("card-enter");
-      void tray.offsetWidth;
-      tray.classList.remove("card-enter");
-      tray.classList.add("card-enter-active");
-      setTimeout(() => { tray.classList.remove("card-enter-active"); busy = false; }, 440);
-    }, 480);
-  });
-
-  function showDone() {
-    el.className = "section w-quiz-done";
-    const pct = Math.round((score / questions.length) * 100);
-    const color = pct >= 80 ? "var(--green)" : pct >= 50 ? "var(--orange)" : "var(--red)";
-    const msg = pct === 100 ? "Điểm tuyệt đối! 🎉" : pct >= 80 ? "Làm tốt lắm! 👏" : pct >= 50 ? "Khá ổn, luyện thêm nhé." : "Đừng nản — ôn lại rồi thử lại!";
+    el.className = "section w-quiz";
     el.innerHTML = `
-      <div class="quiz-score" style="color:${color};">${pct}%</div>
-      <div class="quiz-score-label">${score} / ${questions.length} câu đúng</div>
-      <div class="quiz-score-msg">${msg}</div>
-      <button class="pbtn" id="retryBtn" style="margin-top:32px;">Làm lại</button>
+      <div class="section-head">
+        <h1>Quiz</h1>
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" id="quizProgFill"></div></div>
+          <span class="progress-count" id="quizProgCount"></span>
+        </div>
+        <p class="lede" style="margin-top:6px;">Bộ ${deckNumber}</p>
+      </div>
+
+      <div class="quiz-deck-wrap" id="quizDeckWrap">
+        <div class="stack-card l2"></div>
+        <div class="stack-card l1"></div>
+        <div class="quiz-tray" id="quizTray">
+          <div class="quiz-inner">
+            <div class="level-badge"><img id="quizGem" src="" alt=""><span id="quizLevelTxt"></span></div>
+            <div class="quiz-lbl">TỪ NÀY NGHĨA LÀ GÌ?</div>
+            <div class="quiz-word-row"><span class="quiz-word" id="quizWord"></span><span class="quiz-word-prep" id="quizWordPrep"></span></div>
+            <div class="quiz-ph" id="quizPh"></div>
+            <div class="quiz-choices" id="quizChoices"></div>
+          </div>
+          <div class="swipe-glow" id="quizGlow"></div>
+          <div class="stamp" id="quizStamp"></div>
+        </div>
+      </div>
+
+      <button class="pbtn block quiz-next-btn" id="nextQBtn" style="margin-top:20px;">Câu tiếp theo →</button>
     `;
-    el.querySelector("#retryBtn").addEventListener("click", () => renderQuiz(root));
+
+    const tray = el.querySelector("#quizTray");
+    const glow = el.querySelector("#quizGlow");
+    const stamp = el.querySelector("#quizStamp");
+    const nextBtn = el.querySelector("#nextQBtn");
+    const l1 = el.querySelector(".stack-card.l1");
+    const l2 = el.querySelector(".stack-card.l2");
+    let current = null;
+
+    function renderQuestion() {
+      current = makeQuestion(deck[qIndex]);
+      el.querySelector("#quizGem").src = GEMS[current.word.level] || GEMS.A1;
+      el.querySelector("#quizLevelTxt").textContent = LEVEL_LABEL[current.word.level] || "A1";
+      el.querySelector("#quizWord").textContent = current.word.word;
+      el.querySelector("#quizWordPrep").textContent = current.word.preposition || "";
+      el.querySelector("#quizPh").textContent = current.word.phonetic || "";
+      el.querySelector("#quizProgFill").style.width = ((qIndex + 1) / deck.length) * 100 + "%";
+      el.querySelector("#quizProgCount").textContent = `${qIndex + 1}/${deck.length}`;
+
+      const wrap = el.querySelector("#quizChoices");
+      wrap.innerHTML = "";
+      current.choices.forEach((c) => {
+        const b = document.createElement("button");
+        b.className = "quiz-choice";
+        b.innerHTML = `<span class="choice-text">${escapeHtml(c)}</span><span class="mark"></span>`;
+        b.addEventListener("click", () => pick(b, c));
+        wrap.appendChild(b);
+      });
+
+      selected = null;
+      nextBtn.classList.remove("show");
+    }
+
+    function pick(btn, choice) {
+      if (selected || busy) return;
+      selected = choice;
+      const correct = choice === current.answer;
+      if (correct) deckCorrect++; else deckWrong++;
+      recordQuizResult(uid, current.word.id, correct, current.word.quizStreak || 0);
+
+      el.querySelectorAll(".quiz-choice").forEach((b) => {
+        const txt = b.querySelector(".choice-text").textContent;
+        if (txt === current.answer) { b.classList.add("correct"); b.querySelector(".mark").textContent = "✓"; }
+        else if (b === btn) { b.classList.add("wrong"); b.querySelector(".mark").textContent = "✗"; }
+      });
+
+      stamp.textContent = correct ? "✓" : "✗";
+      stamp.className = "stamp go " + (correct ? "correct" : "wrong");
+      glow.className = "swipe-glow " + (correct ? "flash-green" : "flash-red");
+
+      if (correct) {
+        setTimeout(goNext, 500);
+      } else {
+        nextBtn.textContent = qIndex + 1 >= deck.length ? "Xem kết quả" : "Câu tiếp theo →";
+        setTimeout(() => nextBtn.classList.add("show"), 200);
+      }
+    }
+
+    function goNext() {
+      if (busy || !selected) return;
+      busy = true;
+      const isLast = qIndex + 1 >= deck.length;
+      const correctPick = selected === current.answer;
+      const dir = correctPick ? "swipe-out-right" : "swipe-out-left";
+
+      tray.classList.add(dir);
+      l1.classList.add("advance");
+      l2.classList.add("advance");
+
+      setTimeout(() => {
+        if (isLast) {
+          logQuizCompleted(uid);
+          deckDone = true;
+          busy = false;
+          paint();
+          return;
+        }
+        qIndex++;
+        renderQuestion();
+
+        tray.classList.remove("swipe-out-right", "swipe-out-left");
+        stamp.className = "stamp";
+        glow.className = "swipe-glow";
+        l1.classList.remove("advance");
+        l2.classList.remove("advance");
+
+        tray.classList.add("card-enter");
+        void tray.offsetWidth;
+        tray.classList.remove("card-enter");
+        tray.classList.add("card-enter-active");
+        setTimeout(() => { tray.classList.remove("card-enter-active"); busy = false; }, 440);
+      }, 480);
+    }
+
+    nextBtn.addEventListener("click", goNext);
+    renderQuestion();
   }
 
-  renderQuestion();
+  paint();
 }
 
 /* ============================================================
@@ -1662,6 +1728,7 @@ function tierFromStreak(seen, streak) {
 
 function getFlashcardTier(w) { return tierFromStreak(w.flashcardSeen, w.streak); }
 function getWritingTier(w) { return tierFromStreak(w.writingSeen, w.writingStreak); }
+function getQuizTier(w) { return tierFromStreak(w.quizSeen, w.quizStreak); }
 
 // Trộn 1 bộ tối đa DECK_SIZE thẻ theo tỉ lệ DECK_QUOTA, dựa trên hàm
 // xếp hạng truyền vào (getFlashcardTier hoặc getWritingTier).
