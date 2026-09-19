@@ -68,6 +68,10 @@ export function addWord(uid, data) {
     writingSeen: 0,
     writingCorrect: 0,
     writingWrong: 0,
+    quizSeen: 0,
+    quizCorrect: 0,
+    quizWrong: 0,
+    quizStreak: 0,
     addedAt: serverTimestamp()
   });
 }
@@ -106,6 +110,18 @@ export function recordWritingResult(uid, wordId, correct, currentWritingStreak) 
     writingCorrect: increment(correct ? 1 : 0),
     writingWrong: increment(correct ? 0 : 1),
     writingStreak: newStreak
+  });
+}
+
+// Ghi lại 1 lần trả lời ở Quiz — có streak riêng, dùng để trộn bộ câu hỏi
+// theo đúng cách Flashcard/Luyện viết đang làm (ưu tiên từ chưa thuộc).
+export function recordQuizResult(uid, wordId, correct, currentQuizStreak) {
+  const newStreak = correct ? (currentQuizStreak || 0) + 1 : 0;
+  return updateDoc(doc(db, "users", uid, "words", wordId), {
+    quizSeen: increment(1),
+    quizCorrect: increment(correct ? 1 : 0),
+    quizWrong: increment(correct ? 0 : 1),
+    quizStreak: newStreak
   });
 }
 
