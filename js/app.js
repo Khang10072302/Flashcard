@@ -686,6 +686,7 @@ function wordCardHtml(w) {
         <div class="word-card-main">
           <div class="word-card-title">
             <span class="w">${escapeHtml(w.word)}</span>
+            ${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}
             <span class="ph">${escapeHtml(w.phonetic || "")}</span>
             <span class="tag-pill tag-${w.tag || "Noun"}">${TAG_LABEL[w.tag] || w.tag || ""}</span>
             ${w.mastered ? `<span class="mastered-tag">✓ Đã thuộc</span>` : ""}
