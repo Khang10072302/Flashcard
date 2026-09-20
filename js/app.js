@@ -980,7 +980,7 @@ function renderFlashcard(root) {
     `;
 
     const flipCardEl = el.querySelector("#flipCard");
-    applyWordShift(flipCardEl, current.word);
+    flipCardEl.style.setProperty("--shrink", shrinkForWord(current.word));
     flipCardEl.addEventListener("click", () => {
       flipped = !flipped;
       flipCardEl.classList.toggle("revealed", flipped);
@@ -1847,29 +1847,18 @@ function escapeRegex(s) {
   return (s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// ---------- Cỡ chữ & khoảng dịch chuyển động cho từ/idiom/câu dài trên Flashcard ----------
-// Tránh lặp lại lỗi chữ dài tràn ra ngoài hoặc chồng lên nghĩa khi lật thẻ:
-// cỡ chữ co theo độ dài, khoảng dịch chuyển lúc lật đo bằng chiều cao thật (JS), không dùng số cố định.
+// ---------- Cỡ chữ & độ co động cho từ/idiom/câu dài trên Flashcard ----------
+// Chữ dài giờ được PHÉP xuống dòng (xem .w-row flex-wrap trong CSS), nên không cần
+// ép cỡ chữ nhỏ quá — chỉ giảm nhẹ để 2-3 dòng vẫn gọn trong khung, không tràn.
 function sizeForWord(word, preposition) {
   const len = (word || "").length + (preposition ? preposition.length + 1 : 0);
   const isMobile = window.innerWidth <= 760;
-  const base = len <= 10 ? 42 : len <= 16 ? 34 : len <= 24 ? 27 : len <= 34 ? 22 : 18;
+  const base = len <= 12 ? 42 : len <= 20 ? 36 : len <= 30 ? 30 : len <= 45 ? 24 : 20;
   return isMobile ? Math.round(base * 0.62) : base;
 }
 function shrinkForWord(word) {
   const len = (word || "").length;
-  return len <= 10 ? 0.8 : len <= 24 ? 0.74 : 0.68;
-}
-function applyWordShift(flipCardEl, word) {
-  const wRow = flipCardEl.querySelector(".w-row");
-  if (!wRow) return;
-  const h = wRow.getBoundingClientRect().height;
-  const isMobile = window.innerWidth <= 760;
-  const shiftLg = Math.max(isMobile ? 24 : 46, h * (isMobile ? 0.8 : 0.85) + (isMobile ? 8 : 18));
-  const shiftSm = Math.max(isMobile ? 16 : 30, shiftLg * 0.62);
-  flipCardEl.style.setProperty("--shift-lg", shiftLg + "px");
-  flipCardEl.style.setProperty("--shift-sm", shiftSm + "px");
-  flipCardEl.style.setProperty("--shrink", shrinkForWord(word));
+  return len <= 12 ? 0.8 : len <= 30 ? 0.76 : 0.7;
 }
 
 function escapeHtml(s) {
