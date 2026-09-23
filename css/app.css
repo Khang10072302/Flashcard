@@ -549,8 +549,8 @@ input,textarea{font-family:inherit;}
 .quiz-inner>*{position:relative;z-index:1;}
 .quiz-inner>.level-badge{position:absolute;z-index:2;}
 .quiz-lbl{font-size:11px;font-weight:600;color:var(--ink-soft);letter-spacing:.6px;text-align:center;}
-.quiz-word-row{display:flex;align-items:baseline;justify-content:center;gap:7px;margin-top:14px;}
-.quiz-word{font-size:34px;font-weight:700;letter-spacing:-1px;}
+.quiz-word-row{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:7px;margin-top:14px;text-align:center;}
+.quiz-word{font-size:34px;font-weight:700;letter-spacing:-1px;text-align:center;}
 .quiz-word-prep{font-size:19px;font-weight:600;color:var(--ink-dim);}
 .quiz-ph{font-size:14px;color:var(--ink-soft);text-align:center;margin-top:6px;}
 .quiz-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px;}
