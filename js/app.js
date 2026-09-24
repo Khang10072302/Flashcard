@@ -688,7 +688,7 @@ function wordCardHtml(w) {
             <span class="w">${escapeHtml(w.word)}</span>
             ${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}
             <span class="ph">${escapeHtml(w.phonetic || "")}</span>
-            <span class="tag-pill tag-${w.tag || "Noun"}">${TAG_LABEL[w.tag] || w.tag || ""}</span>
+            ${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}
             ${w.mastered ? `<span class="mastered-tag">✓ Đã thuộc</span>` : ""}
           </div>
           <div class="word-card-meaning">${escapeHtml(w.meaning || "")}</div>
@@ -766,7 +766,7 @@ function wordCardHtml(w) {
    ============================================================ */
 function openEditWordModal(word) {
   const root = document.getElementById("modalRoot");
-  let selectedTag = word.tag || "Noun";
+  const selectedTags = new Set(word.tags || [word.tag || "Noun"]);
   let selectedLevel = word.level || "A1";
 
   root.innerHTML = `
@@ -799,9 +799,9 @@ function openEditWordModal(word) {
           <input type="text" id="editExampleInput" value="${escapeAttr(word.example || "")}">
         </div>
         <div class="f-field">
-          <label>Loại từ</label>
+          <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
           <div class="tag-picker" id="editTagPicker">
-            ${TAGS.map((t) => `<button type="button" class="tag-choice ${t === selectedTag ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+            ${TAGS.map((t) => `<button type="button" class="tag-choice ${selectedTags.has(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
           </div>
         </div>
         <div class="f-field">
@@ -834,8 +834,14 @@ function openEditWordModal(word) {
 
   document.getElementById("editTagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
     btn.addEventListener("click", () => {
-      selectedTag = btn.dataset.t;
-      document.getElementById("editTagPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      const t = btn.dataset.t;
+      if (selectedTags.has(t)) {
+        if (selectedTags.size === 1) return; // luôn giữ ít nhất 1 loại từ
+        selectedTags.delete(t);
+      } else {
+        selectedTags.add(t);
+      }
+      btn.classList.toggle("active", selectedTags.has(t));
     });
   });
 
@@ -856,7 +862,8 @@ function openEditWordModal(word) {
       phonetic: document.getElementById("editPhoneticInput").value.trim(),
       meaning: newMeaning,
       example: document.getElementById("editExampleInput").value.trim(),
-      tag: selectedTag,
+      tags: [...selectedTags],
+      tag: [...selectedTags][0],
       level: selectedLevel
     });
     close();
@@ -958,7 +965,7 @@ function renderFlashcard(root) {
             </div>
             <div class="glass"></div>
             <div class="word-layer">
-              <span class="tag-pill tag-${current.tag || "Noun"}" style="margin-bottom:16px;">${TAG_LABEL[current.tag] || current.tag || ""}</span>
+              <div class="tag-pill-row">${(current.tags && current.tags.length ? current.tags : [current.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
               <div class="w-row speak-trigger"><span class="w" style="font-size:${sizeForWord(current.word, current.preposition)}px;">${escapeHtml(current.word)}</span>${current.preposition ? `<span class="w-prep">${escapeHtml(current.preposition)}</span>` : ""}</div>
               <div class="ph speak-trigger">${escapeHtml(current.phonetic || "")}</div>
               <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
@@ -1172,7 +1179,7 @@ function renderWriting(root) {
       host.querySelector("#wrHints").innerHTML = `
         <div class="wr-hint"><div class="lbl">PHÁT ÂM</div><div class="val">${escapeHtml(current.phonetic || "—")}</div></div>
         <div class="wr-hint"><div class="lbl">SỐ CHỮ CÁI</div><div class="val">${current.word.length} chữ</div></div>
-        <div class="wr-hint"><div class="lbl">LOẠI TỪ</div><div class="val">${TAG_LABEL[current.tag] || current.tag || ""}</div></div>
+        <div class="wr-hint"><div class="lbl">LOẠI TỪ</div><div class="val">${(current.tags && current.tags.length ? current.tags : [current.tag || "Noun"]).map((t) => TAG_LABEL[t] || t).join(", ")}</div></div>
       `;
       input.value = "";
       input.disabled = false;
@@ -1550,9 +1557,9 @@ function renderAdd(root) {
         <input type="text" id="fExample" placeholder="Một câu ví dụ dùng từ này" value="${escapeAttr(editing?.example || "")}">
       </div>
       <div class="f-field">
-        <label>Loại từ</label>
+        <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
         <div class="tag-picker" id="tagPicker">
-          ${TAGS.map((t) => `<button type="button" class="tag-choice ${((editing?.tag || "Noun") === t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+          ${TAGS.map((t) => `<button type="button" class="tag-choice ${(editing?.tags || [editing?.tag || "Noun"]).includes(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
         </div>
       </div>
       <div class="f-field">
@@ -1569,11 +1576,17 @@ function renderAdd(root) {
   `;
   root.appendChild(el);
 
-  let selectedTag = editing?.tag || "Noun";
+  const selectedTags = new Set(editing?.tags || [editing?.tag || "Noun"]);
   el.querySelector("#tagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
     btn.addEventListener("click", () => {
-      selectedTag = btn.dataset.t;
-      el.querySelector("#tagPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      const t = btn.dataset.t;
+      if (selectedTags.has(t)) {
+        if (selectedTags.size === 1) return; // luôn giữ ít nhất 1 loại từ
+        selectedTags.delete(t);
+      } else {
+        selectedTags.add(t);
+      }
+      btn.classList.toggle("active", selectedTags.has(t));
     });
   });
 
@@ -1597,7 +1610,8 @@ function renderAdd(root) {
       phonetic: el.querySelector("#fPhonetic").value.trim(),
       meaning,
       example: el.querySelector("#fExample").value.trim(),
-      tag: selectedTag,
+      tags: [...selectedTags],
+      tag: [...selectedTags][0],
       level: selectedLevel
     };
     const saveBtn = el.querySelector("#saveBtn");
