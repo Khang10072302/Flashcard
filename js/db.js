@@ -57,6 +57,7 @@ export function addWord(uid, data) {
     meaning: data.meaning || "",
     example: data.example || "",
     tag: data.tag || "Noun",
+    tags: data.tags && data.tags.length ? data.tags : [data.tag || "Noun"],
     level: data.level || "A1",
     preposition: data.preposition || "",
     mastered: false,
