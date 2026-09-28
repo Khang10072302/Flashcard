@@ -17,6 +17,7 @@ const ICONS = {
   writing: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
   quiz: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 6.5a1.5 1.5 0 113 0c0 1-1.5 1.5-1.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor"/></svg>`,
   progress: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4L9 10l5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  handwriting: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13.5c2-3 3-6 4.5-9 .5-1 2-1 2.5 0 1 2 2 5 3.5 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 9.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M2 14.5h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
   more: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="13" cy="8" r="1.3" fill="currentColor"/></svg>`
 };
 
@@ -133,6 +134,7 @@ function wireMobileNav() {
   inboxBtn.querySelector(".ico").innerHTML = ICONS.inbox;
   moreBtn.querySelector(".ico").innerHTML = ICONS.more;
   sheet.querySelector('[data-section="writing"] .ico').innerHTML = ICONS.writing;
+  sheet.querySelector('[data-section="handwriting"] .ico').innerHTML = ICONS.handwriting;
   sheet.querySelector('[data-section="quiz"] .ico').innerHTML = ICONS.quiz;
   sheet.querySelector('[data-section="progress"] .ico').innerHTML = ICONS.progress;
 
@@ -208,7 +210,7 @@ function render() {
   content.appendChild(wrap);
   const renderers = {
     dashboard: renderDashboard, inbox: renderInbox, flashcard: renderFlashcard, writing: renderWriting,
-    quiz: renderQuiz, progress: renderProgress, add: renderAdd, profile: renderProfile
+    quiz: renderQuiz, progress: renderProgress, add: renderAdd, profile: renderProfile, handwriting: renderHandwriting
   };
   (renderers[section] || renderInbox)(wrap);
 }
@@ -1273,6 +1275,203 @@ function renderWriting(root) {
   }
 
   paintShell();
+}
+
+/* ============================================================
+   HANDWRITING
+   ============================================================ */
+function renderHandwriting(root) {
+  const el = document.createElement("div");
+  el.className = "section w-mid";
+  root.appendChild(el);
+
+  if (allWords.length === 0) {
+    el.innerHTML = `<div class="empty-state">Chưa có từ nào. Thêm từ ở "Sổ từ vựng" trước nhé.</div>`;
+    return;
+  }
+
+  const words = shuffle(allWords);
+  let hIndex = 0;
+  let traceOn = true;
+  const DEFAULT_BOX_COUNT = 10;
+  let boxes = [];
+  let grid;
+
+  function dpr() { return window.devicePixelRatio || 1; }
+
+  function sizeCategoryFor(word) {
+    const len = (word || "").length;
+    if (len <= 12) return "normal";
+    if (len <= 24) return "wide";
+    return "tall";
+  }
+  function ghostFontSizeFor(word, category) {
+    const len = (word || "").length;
+    let base;
+    if (category === "normal") base = 24;
+    else if (category === "wide") base = len <= 18 ? 26 : 22;
+    else base = len <= 34 ? 26 : 20;
+    return Math.round(base * 1.2);
+  }
+  const LINE_HEIGHT_MULT = 1.15 * 1.2;
+
+  function makeBox(word, index, fontSize) {
+    const box = document.createElement("div");
+    box.className = "wbox";
+    const lh = Math.round(fontSize * LINE_HEIGHT_MULT);
+    box.innerHTML = `
+      <div class="rules">
+        <div class="rule-line" style="top:30%;"></div>
+        <div class="rule-line" style="top:70%;"></div>
+      </div>
+      <div class="ghost ${traceOn ? "" : "hidden"}" style="font-size:${fontSize}px;line-height:${lh}px;">${escapeHtml(word)}</div>
+      <canvas></canvas>
+      <button class="wbox-clear" title="Xoá ô này">✕</button>
+    `;
+    grid.appendChild(box);
+
+    const canvas = box.querySelector("canvas");
+    const ghost = box.querySelector(".ghost");
+    const ctx = canvas.getContext("2d");
+    const entry = { canvas, ctx, ghost, strokes: [] };
+
+    function resize() {
+      const rect = box.getBoundingClientRect();
+      canvas.width = rect.width * dpr();
+      canvas.height = rect.height * dpr();
+      ctx.scale(dpr(), dpr());
+      redraw(entry);
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    let current = null;
+    canvas.addEventListener("pointerdown", (e) => {
+      canvas.setPointerCapture(e.pointerId);
+      current = [];
+      entry.strokes.push(current);
+      addPoint(e);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!current) return;
+      const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      events.forEach((ev) => addPoint(ev));
+      redraw(entry);
+    });
+    function endStroke() { current = null; }
+    canvas.addEventListener("pointerup", endStroke);
+    canvas.addEventListener("pointercancel", endStroke);
+    canvas.addEventListener("pointerleave", endStroke);
+
+    function addPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      const pressure = e.pressure && e.pressure > 0 ? e.pressure : 0.5;
+      current.push({ x: e.clientX - rect.left, y: e.clientY - rect.top, p: pressure });
+    }
+
+    box.querySelector(".wbox-clear").addEventListener("click", () => {
+      entry.strokes = [];
+      redraw(entry);
+    });
+
+    boxes.push(entry);
+    return entry;
+  }
+
+  function redraw(entry) {
+    const { ctx, canvas } = entry;
+    ctx.clearRect(0, 0, canvas.width / dpr(), canvas.height / dpr());
+    entry.strokes.forEach((stroke) => {
+      if (stroke.length < 2) return;
+      for (let i = 1; i < stroke.length; i++) {
+        const a = stroke[i - 1], b = stroke[i];
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = "#1D1D1F";
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 2 + b.p * 4;
+        ctx.stroke();
+      }
+    });
+  }
+
+  function buildBoxes(count) {
+    boxes = [];
+    grid.innerHTML = "";
+    const w = words[hIndex].word;
+    const category = sizeCategoryFor(w);
+    const fontSize = ghostFontSizeFor(w, category);
+    grid.className = "grid size-" + category;
+    for (let i = 0; i < count; i++) makeBox(w, i, fontSize);
+  }
+
+  function paintWord() {
+    const w = words[hIndex];
+    el.innerHTML = `
+      <div class="section-head">
+        <h1>Handwriting</h1>
+        <p class="lede">Luyện viết tay để nhớ chính tả và hình ảnh của từ tốt hơn.</p>
+      </div>
+
+      <div class="progress-row" style="margin-bottom:22px;">
+        <div class="progress-track"><div class="progress-fill" style="width:${((hIndex + 1) / words.length) * 100}%;"></div></div>
+        <span class="progress-count">${hIndex + 1} / ${words.length}</span>
+      </div>
+
+      <div class="flip-card" style="margin-bottom:26px;">
+        <div class="glass-frame">
+          <div class="word-layer">
+            <div class="level-badge"><img src="${GEMS[w.level] || GEMS.A1}" alt=""><span>${LEVEL_LABEL[w.level] || "A1"}</span></div>
+            <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
+            <div class="w-row" id="hwWordRow" style="cursor:pointer;"><span class="w">${escapeHtml(w.word)}</span>${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}</div>
+            <div class="ph">${escapeHtml(w.phonetic || "")}</div>
+            <div class="tip">CHẠM VÀO TỪ ĐỂ NGHE PHÁT ÂM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="write-head">
+        <div class="write-head-label"><b>Viết ${DEFAULT_BOX_COUNT} lần</b><span class="dot-sep">·</span><span class="sub">để tạo trí nhớ cơ bắp</span></div>
+        <div class="write-head-actions">
+          <button class="sbtn ${traceOn ? "trace-on" : ""}" id="traceBtn">Trace: ${traceOn ? "Bật" : "Tắt"}</button>
+          <button class="sbtn" id="clearAllBtn">Xoá hết</button>
+        </div>
+      </div>
+
+      <div class="grid" id="hwGrid"></div>
+      <div class="add-box-wrap"><button class="sbtn ghost" id="addBoxBtn">+ Thêm ô</button></div>
+
+      <button class="pbtn block" id="hwNextBtn" style="margin-top:6px;">Tiếp theo →</button>
+    `;
+
+    grid = el.querySelector("#hwGrid");
+    buildBoxes(DEFAULT_BOX_COUNT);
+
+    el.querySelector("#hwWordRow").addEventListener("click", () => speak(w.word));
+    el.querySelector("#traceBtn").addEventListener("click", (e) => {
+      traceOn = !traceOn;
+      e.currentTarget.textContent = "Trace: " + (traceOn ? "Bật" : "Tắt");
+      e.currentTarget.classList.toggle("trace-on", traceOn);
+      boxes.forEach((entry) => entry.ghost.classList.toggle("hidden", !traceOn));
+    });
+    el.querySelector("#clearAllBtn").addEventListener("click", () => {
+      boxes.forEach((entry) => { entry.strokes = []; redraw(entry); });
+    });
+    el.querySelector("#addBoxBtn").addEventListener("click", () => {
+      const cat = sizeCategoryFor(words[hIndex].word);
+      const fontSize = ghostFontSizeFor(words[hIndex].word, cat);
+      const startIndex = boxes.length;
+      for (let i = 0; i < 2; i++) makeBox(words[hIndex].word, startIndex + i, fontSize);
+    });
+    el.querySelector("#hwNextBtn").addEventListener("click", () => {
+      hIndex = (hIndex + 1) % words.length;
+      paintWord();
+    });
+  }
+
+  paintWord();
 }
 
 /* ============================================================
