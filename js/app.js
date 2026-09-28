@@ -1940,8 +1940,13 @@ function renderAdd(root) {
    ============================================================ */
 
 function getProfileLegendGem(level) {
-  if (level === "Idiom") return "assets/gems/Idiom.svg";
   if (level === "Sentence") return "assets/gems/Sentence.svg";
+  if (level === "Idiom") return "assets/gems/Idiom.svg";
+  if (typeof level === "string" && level.startsWith("Idiom-")) {
+    const cefr = level.slice("Idiom-".length);
+    if (CEFR_LEVELS.includes(cefr)) return encodeURI(`assets/gems/Idiom/Idiom ${cefr}.png`);
+    return "assets/gems/Idiom.svg";
+  }
   return GEMS[level] || GEMS.A1;
 }
 
@@ -1998,13 +2003,32 @@ function renderProfile(root) {
         <div class="f-field" style="margin-bottom:14px;">
           <label>Cấp độ từ vựng</label>
         </div>
-        <div class="level-legend">
-          ${[...CEFR_LEVELS, "Idiom", "Sentence"].map((lv) => `
+
+        <div class="level-legend-group">
+          <div class="level-legend-row">
+            ${CEFR_LEVELS.map((lv) => `
+              <div class="level-legend-item">
+                <div class="level-legend-box"><img src="${getProfileLegendGem(lv)}" alt="${LEVEL_LABEL[lv]}" style="width:${getProfileLegendGemSize(lv)}px;height:${getProfileLegendGemSize(lv)}px;"></div>
+                <div class="level-legend-lbl">${LEVEL_LABEL[lv]}</div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div class="level-legend-row">
+            ${CEFR_LEVELS.map((lv) => `
+              <div class="level-legend-item">
+                <div class="level-legend-box"><img src="${getProfileLegendGem(`Idiom-${lv}`)}" alt="Idiom ${lv}" style="width:${getProfileLegendGemSize("Idiom")}px;height:${getProfileLegendGemSize("Idiom")}px;"></div>
+                <div class="level-legend-lbl">${lv}</div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div class="level-legend-row level-legend-row-single">
             <div class="level-legend-item">
-              <div class="level-legend-box"><img src="${getProfileLegendGem(lv)}" alt="${LEVEL_LABEL[lv]}" style="width:${getProfileLegendGemSize(lv)}px;height:${getProfileLegendGemSize(lv)}px;"></div>
-              <div class="level-legend-lbl">${LEVEL_LABEL[lv]}</div>
+              <div class="level-legend-box"><img src="${getProfileLegendGem("Sentence")}" alt="Sentence" style="width:${getProfileLegendGemSize("Sentence")}px;height:${getProfileLegendGemSize("Sentence")}px;"></div>
+              <div class="level-legend-lbl">Sentence</div>
             </div>
-          `).join("")}
+          </div>
         </div>
       </div>
 
