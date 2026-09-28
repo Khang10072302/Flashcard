@@ -20,6 +20,13 @@ function getContentType(word) {
   return "vocabulary";
 }
 
+function getAvatarGemSize(word) {
+  const type = getContentType(word);
+  if (type === "idiom") return 30; // keep all Idiom gems at the old Idiom size
+  if (type === "sentence") return 32;
+  return LEVEL_AVATAR_SIZE[word?.level] || 12;
+}
+
 function getGemForWord(word) {
   const type = getContentType(word);
   if (type === "idiom") {
@@ -709,7 +716,7 @@ function wordCardHtml(w) {
     <div class="word-card" data-id="${w.id}" data-word="${escapeAttr(w.word)}">
       <button class="word-card-head" type="button">
         <div class="word-avatar ${w.mastered ? "mastered" : ""} speak-avatar" data-speak-word="${escapeAttr(w.word)}">
-          <img class="word-avatar-gem" src="${getGemForWord(w)}" alt="${getLevelLabelForWord(w)}" style="width:${LEVEL_AVATAR_SIZE[w.level] || 12}px;height:${LEVEL_AVATAR_SIZE[w.level] || 12}px;">
+          <img class="word-avatar-gem" src="${getGemForWord(w)}" alt="${getLevelLabelForWord(w)}" style="width:${getAvatarGemSize(w)}px;height:${getAvatarGemSize(w)}px;">
           <span class="word-avatar-speak">🔊</span>
         </div>
         <div class="word-card-main">
