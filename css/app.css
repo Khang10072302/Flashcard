@@ -888,3 +888,41 @@ input,textarea{font-family:inherit;}
 @media (prefers-reduced-motion: reduce){
   .confetti-burst{display:none;}
 }
+
+/* ---------- handwriting ---------- */
+.write-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+.write-head-label{ font-size:15px; }
+.write-head-label b{ font-weight:700; }
+.write-head-label .dot-sep{ color:var(--ink-dim); margin:0 6px; }
+.write-head-label .sub{ color:var(--ink-soft); font-weight:400; font-size:14px; }
+.write-head-actions{ display:flex; gap:10px; }
+.sbtn.trace-on{ border-color:var(--blue); color:var(--blue); background:#EAF3FE; }
+.sbtn.ghost{ background:transparent; border-color:transparent; color:var(--ink-soft); box-shadow:none; }
+
+.grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; margin-bottom:16px; }
+@media (min-width:640px){ .grid.size-normal{ grid-template-columns:repeat(3, 1fr); } }
+@media (min-width:900px){ .grid.size-normal{ grid-template-columns:repeat(4, 1fr); } }
+.grid.size-wide, .grid.size-tall{ grid-template-columns:1fr; }
+.wbox{
+  position:relative; background:#fff; border-radius:18px; border:2px solid var(--line);
+  box-shadow:0 1px 4px rgba(0,0,0,.05); overflow:hidden; touch-action:none; height:140px;
+}
+.grid.size-wide .wbox{ height:110px; }
+.grid.size-tall .wbox{ height:230px; }
+.wbox canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:2; }
+.wbox .rules{ position:absolute; inset:0; z-index:1; }
+.wbox .rule-line{ position:absolute; left:14px; right:14px; border-top:1px solid var(--line); }
+.wbox .ghost{
+  position:absolute; left:14px; right:14px; top:0; height:100%; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; color:#CBE0FA; pointer-events:none; user-select:none;
+  overflow:hidden; text-align:center; white-space:nowrap;
+}
+.wbox .ghost.hidden{ display:none; }
+.grid.size-wide .ghost, .grid.size-tall .ghost{ white-space:normal; }
+.wbox-clear{
+  position:absolute; top:4px; right:4px; z-index:3; width:20px; height:20px; border-radius:7px; border:none;
+  background:rgba(0,0,0,.05); color:var(--ink-dim); font-size:11px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.add-box-wrap{ text-align:center; margin-bottom:18px; }
