@@ -903,7 +903,9 @@ input,textarea{font-family:inherit;}
 .grid.size-wide, .grid.size-tall{ grid-template-columns:1fr; }
 .wbox{
   position:relative; background:#fff; border-radius:18px; border:2px solid var(--line);
-  box-shadow:0 1px 4px rgba(0,0,0,.05); overflow:hidden; touch-action:none; height:140px;
+  box-shadow:0 1px 4px rgba(0,0,0,.05); overflow:hidden; touch-action:none;
+  user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  -webkit-user-drag:none; height:140px;
 }
 .grid.size-wide .wbox{ height:110px; }
 .grid.size-tall .wbox{ height:230px; }
