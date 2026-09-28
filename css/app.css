@@ -900,8 +900,8 @@ input,textarea{font-family:inherit;}
 .sbtn.ghost{ background:transparent; border-color:transparent; color:var(--ink-soft); box-shadow:none; }
 
 .grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; margin-bottom:16px; }
-@media (min-width:640px){ .grid.size-normal{ grid-template-columns:repeat(3, 1fr); } }
-@media (min-width:900px){ .grid.size-normal{ grid-template-columns:repeat(4, 1fr); } }
+@media (min-width:400px){ .grid.size-normal{ grid-template-columns:repeat(1, 1fr); } }
+@media (min-width:900px){ .grid.size-normal{ grid-template-columns:repeat(2, 1fr); } }
 .grid.size-wide, .grid.size-tall{ grid-template-columns:1fr; }
 .wbox{
   position:relative; background:#fff; border-radius:18px; border:2px solid var(--line);
