@@ -1938,6 +1938,19 @@ function renderAdd(root) {
 /* ============================================================
    PROFILE — đổi avatar (chọn từ các ảnh tem có sẵn) + tên
    ============================================================ */
+
+function getProfileLegendGem(level) {
+  if (level === "Idiom") return "assets/gems/Idiom.svg";
+  if (level === "Sentence") return "assets/gems/Sentence.svg";
+  return GEMS[level] || GEMS.A1;
+}
+
+function getProfileLegendGemSize(level) {
+  if (level === "Idiom") return 30;
+  if (level === "Sentence") return 32;
+  return LEVEL_AVATAR_SIZE[level] || 12;
+}
+
 function renderProfile(root) {
   const el = document.createElement("div");
   el.className = "section w-profile";
@@ -1986,9 +1999,9 @@ function renderProfile(root) {
           <label>Cấp độ từ vựng</label>
         </div>
         <div class="level-legend">
-          ${CEFR_LEVELS.map((lv) => `
+          ${[...CEFR_LEVELS, "Idiom", "Sentence"].map((lv) => `
             <div class="level-legend-item">
-              <div class="level-legend-box"><img src="${GEMS[lv]}" alt="${LEVEL_LABEL[lv]}" style="width:${LEVEL_AVATAR_SIZE[lv]}px;height:${LEVEL_AVATAR_SIZE[lv]}px;"></div>
+              <div class="level-legend-box"><img src="${getProfileLegendGem(lv)}" alt="${LEVEL_LABEL[lv]}" style="width:${getProfileLegendGemSize(lv)}px;height:${getProfileLegendGemSize(lv)}px;"></div>
               <div class="level-legend-lbl">${LEVEL_LABEL[lv]}</div>
             </div>
           `).join("")}
