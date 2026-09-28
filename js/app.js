@@ -6,9 +6,36 @@ import { STAMP_FILES } from "./stamps.js";
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
 const TAG_LABEL = { Noun: "Danh từ", Verb: "Động từ", Adjective: "Tính từ", Adverb: "Trạng từ", Phrase: "Cụm từ", Idiom: "Thành ngữ" };
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2", "Idiom", "Sentence"];
+const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const CONTENT_TYPES = ["vocabulary", "idiom", "sentence"];
+const CONTENT_TYPE_LABEL = { vocabulary: "Từ vựng", idiom: "Idiom", sentence: "Sentence" };
 const LEVEL_LABEL = { A1: "A1", A2: "A2", B1: "B1", B2: "B2", C1: "C1", C2: "C2", Idiom: "Idiom", Sentence: "Sentence" };
 const GEMS = Object.fromEntries(LEVELS.map((lv) => [lv, `assets/gems/${lv}.svg`]));
 const LEVEL_AVATAR_SIZE = { A1: 12, A2: 16, B1: 19, B2: 23, C1: 26, C2: 28, Idiom: 30, Sentence: 32 };
+
+function getContentType(word) {
+  if (word?.contentType && CONTENT_TYPES.includes(word.contentType)) return word.contentType;
+  if (word?.level === "Sentence" || word?.tag === "Sentence" || (word?.tags || []).includes("Sentence")) return "sentence";
+  if (word?.level === "Idiom" || word?.tag === "Idiom" || (word?.tags || []).includes("Idiom")) return "idiom";
+  return "vocabulary";
+}
+
+function getGemForWord(word) {
+  const type = getContentType(word);
+  if (type === "idiom") {
+    if (CEFR_LEVELS.includes(word?.level)) return encodeURI(`assets/gems/Idiom/Idiom ${word.level}.png`);
+    return "assets/gems/Idiom.svg";
+  }
+  if (type === "sentence") return "assets/gems/Sentence.svg";
+  return GEMS[word?.level] || GEMS.A1;
+}
+
+function getLevelLabelForWord(word) {
+  const type = getContentType(word);
+  if (type === "idiom") return CEFR_LEVELS.includes(word?.level) ? word.level : "Idiom";
+  if (type === "sentence") return "Sentence";
+  return LEVEL_LABEL[word?.level] || "A1";
+}
 
 const ICONS = {
   dashboard: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>`,
@@ -682,7 +709,7 @@ function wordCardHtml(w) {
     <div class="word-card" data-id="${w.id}" data-word="${escapeAttr(w.word)}">
       <button class="word-card-head" type="button">
         <div class="word-avatar ${w.mastered ? "mastered" : ""} speak-avatar" data-speak-word="${escapeAttr(w.word)}">
-          <img class="word-avatar-gem" src="${GEMS[w.level] || GEMS.A1}" alt="${LEVEL_LABEL[w.level] || ""}" style="width:${LEVEL_AVATAR_SIZE[w.level] || 12}px;height:${LEVEL_AVATAR_SIZE[w.level] || 12}px;">
+          <img class="word-avatar-gem" src="${getGemForWord(w)}" alt="${getLevelLabelForWord(w)}" style="width:${LEVEL_AVATAR_SIZE[w.level] || 12}px;height:${LEVEL_AVATAR_SIZE[w.level] || 12}px;">
           <span class="word-avatar-speak">🔊</span>
         </div>
         <div class="word-card-main">
@@ -696,7 +723,7 @@ function wordCardHtml(w) {
           <div class="word-card-meaning">${escapeHtml(w.meaning || "")}</div>
         </div>
         <div class="word-card-right">
-          ${isExpanded ? `<span class="right-pill"><img src="${GEMS[w.level] || GEMS.A1}" alt="">${LEVEL_LABEL[w.level] || "A1"}</span>` : ""}
+          ${isExpanded ? `<span class="right-pill"><img src="${getGemForWord(w)}" alt="">${getLevelLabelForWord(w)}</span>` : ""}
           ${w.streak ? `<span class="streak-badge">🔥${w.streak}</span>` : ""}
           <svg class="chev ${isExpanded ? "rot" : ""}" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="#C7C7CC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -768,8 +795,10 @@ function wordCardHtml(w) {
    ============================================================ */
 function openEditWordModal(word) {
   const root = document.getElementById("modalRoot");
-  const selectedTags = new Set(word.tags || [word.tag || "Noun"]);
-  let selectedLevel = word.level || "A1";
+  const contentType = getContentType(word);
+  const selectedTags = new Set((word.tags || [word.tag || "Noun"]).filter((t) => t !== "Idiom" && t !== "Sentence"));
+  if (!selectedTags.size) selectedTags.add("Noun");
+  let selectedLevel = CEFR_LEVELS.includes(word.level) ? word.level : "A1";
 
   root.innerHTML = `
     <div class="modal-backdrop" id="editBackdrop">
@@ -801,17 +830,12 @@ function openEditWordModal(word) {
           <input type="text" id="editExampleInput" value="${escapeAttr(word.example || "")}">
         </div>
         <div class="f-field">
-          <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
-          <div class="tag-picker" id="editTagPicker">
-            ${TAGS.map((t) => `<button type="button" class="tag-choice ${selectedTags.has(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+          <label>Loại nội dung</label>
+          <div class="tag-picker" id="editContentTypePicker">
+            ${CONTENT_TYPES.map((t) => `<button type="button" class="tag-choice ${contentType === t ? "active" : ""}" data-content-type="${t}">${CONTENT_TYPE_LABEL[t]}</button>`).join("")}
           </div>
         </div>
-        <div class="f-field">
-          <label>Cấp độ</label>
-          <div class="tag-picker" id="editLevelPicker">
-            ${LEVELS.map((lv) => `<button type="button" class="tag-choice ${lv === selectedLevel ? "active" : ""}" data-lv="${lv}">${LEVEL_LABEL[lv]}</button>`).join("")}
-          </div>
-        </div>
+        <div id="editConditionalFields"></div>
         <div class="modal-meta">Thêm ${formatDate(word.addedAt)} · ngày sẽ không thay đổi</div>
         <div class="form-actions">
           <button class="save" id="editSaveBtn" type="button">Lưu thay đổi</button>
@@ -823,6 +847,9 @@ function openEditWordModal(word) {
   `;
 
   const backdrop = document.getElementById("editBackdrop");
+  const conditional = document.getElementById("editConditionalFields");
+  let selectedContentType = contentType;
+
   requestAnimationFrame(() => backdrop.classList.add("open"));
 
   function close() {
@@ -830,44 +857,82 @@ function openEditWordModal(word) {
     setTimeout(() => { root.innerHTML = ""; }, 180);
   }
 
+  function paintConditionalFields(animate = true) {
+    if (selectedContentType === "sentence") {
+      conditional.innerHTML = "";
+      return;
+    }
+    const isIdiom = selectedContentType === "idiom";
+    conditional.innerHTML = `
+      <div class="conditional-form-fields ${animate ? "fade-up" : ""}">
+        ${!isIdiom ? `
+          <div class="f-field">
+            <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
+            <div class="tag-picker" id="editTagPicker">
+              ${TAGS.filter((t) => t !== "Idiom").map((t) => `<button type="button" class="tag-choice ${selectedTags.has(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+            </div>
+          </div>
+        ` : ""}
+        <div class="f-field">
+          <label>Cấp độ</label>
+          <div class="tag-picker" id="editLevelPicker">
+            ${CEFR_LEVELS.map((lv) => `<button type="button" class="tag-choice ${lv === selectedLevel ? "active" : ""}" data-lv="${lv}">${lv}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const tagPicker = document.getElementById("editTagPicker");
+    if (tagPicker) {
+      tagPicker.querySelectorAll(".tag-choice").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const t = btn.dataset.t;
+          if (selectedTags.has(t)) {
+            if (selectedTags.size === 1) return;
+            selectedTags.delete(t);
+          } else selectedTags.add(t);
+          btn.classList.toggle("active", selectedTags.has(t));
+        });
+      });
+    }
+    document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedLevel = btn.dataset.lv;
+        document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      });
+    });
+  }
+
+  paintConditionalFields(false);
+
+  document.getElementById("editContentTypePicker").querySelectorAll(".tag-choice").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedContentType = btn.dataset.contentType;
+      document.getElementById("editContentTypePicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      paintConditionalFields(true);
+    });
+  });
+
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
   document.getElementById("modalCloseBtn").addEventListener("click", close);
   document.getElementById("editCancelBtn").addEventListener("click", close);
-
-  document.getElementById("editTagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const t = btn.dataset.t;
-      if (selectedTags.has(t)) {
-        if (selectedTags.size === 1) return; // luôn giữ ít nhất 1 loại từ
-        selectedTags.delete(t);
-      } else {
-        selectedTags.add(t);
-      }
-      btn.classList.toggle("active", selectedTags.has(t));
-    });
-  });
-
-  document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      selectedLevel = btn.dataset.lv;
-      document.getElementById("editLevelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
-    });
-  });
 
   document.getElementById("editSaveBtn").addEventListener("click", async () => {
     const newWord = document.getElementById("editWordInput").value.trim();
     const newMeaning = document.getElementById("editMeaningInput").value.trim();
     if (!newWord || !newMeaning) return;
-    await updateWord(uid, word.id, {
+    const data = {
       word: newWord,
       preposition: document.getElementById("editPrepInput").value.trim(),
       phonetic: document.getElementById("editPhoneticInput").value.trim(),
       meaning: newMeaning,
       example: document.getElementById("editExampleInput").value.trim(),
-      tags: [...selectedTags],
-      tag: [...selectedTags][0],
-      level: selectedLevel
-    });
+      contentType: selectedContentType,
+      tags: selectedContentType === "vocabulary" ? [...selectedTags] : [selectedContentType === "idiom" ? "Idiom" : "Sentence"],
+      tag: selectedContentType === "vocabulary" ? [...selectedTags][0] : (selectedContentType === "idiom" ? "Idiom" : "Sentence"),
+      level: selectedContentType === "sentence" ? "Sentence" : selectedLevel
+    };
+    await updateWord(uid, word.id, data);
     close();
   });
 
@@ -974,8 +1039,8 @@ function renderFlashcard(root) {
             </div>
           </div>
           <div class="level-badge">
-            <img src="${GEMS[current.level] || GEMS.A1}" alt="${LEVEL_LABEL[current.level] || ""}">
-            <span>${LEVEL_LABEL[current.level] || "A1"}</span>
+            <img src="${getGemForWord(current)}" alt="${getLevelLabelForWord(current)}">
+            <span>${getLevelLabelForWord(current)}</span>
           </div>
           <div class="swipe-glow" id="swipeGlow"></div>
           <div class="stamp" id="cardStamp"></div>
@@ -1174,8 +1239,8 @@ function renderWriting(root) {
 
     function fill() {
       const current = deck[deckIndex];
-      host.querySelector("#wrGem").src = GEMS[current.level] || GEMS.A1;
-      host.querySelector("#wrLevelTxt").textContent = LEVEL_LABEL[current.level] || "A1";
+      host.querySelector("#wrGem").src = getGemForWord(current);
+      host.querySelector("#wrLevelTxt").textContent = getLevelLabelForWord(current);
       host.querySelector("#wrMeaning").textContent = current.meaning || "";
       const blanked = current.example
         ? current.example.replace(new RegExp(escapeRegex(current.word), "ig"), "___________")
@@ -1350,32 +1415,21 @@ function renderHandwriting(root) {
 
     let current = null;
     canvas.addEventListener("pointerdown", (e) => {
-      if (e.pointerType !== "pen") return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
       canvas.setPointerCapture(e.pointerId);
       current = [];
       entry.strokes.push(current);
       addPoint(e);
     });
     canvas.addEventListener("pointermove", (e) => {
-      if (e.pointerType !== "pen" || !current) return;
-
-      e.preventDefault();
-
+      if (!current) return;
       const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
       events.forEach((ev) => addPoint(ev));
       redraw(entry);
     });
-    function endStroke(e) {
-      if (e.pointerType !== "pen") return;
-      current = null;
-    }
+    function endStroke() { current = null; }
     canvas.addEventListener("pointerup", endStroke);
     canvas.addEventListener("pointercancel", endStroke);
-    canvas.addEventListener("lostpointercapture", endStroke);
+    canvas.addEventListener("pointerleave", endStroke);
 
     function addPoint(e) {
       const rect = canvas.getBoundingClientRect();
@@ -1438,7 +1492,7 @@ function renderHandwriting(root) {
         <div class="glass-frame">
           <div class="glass"></div>
           <div class="word-layer">
-            <div class="level-badge"><img src="${GEMS[w.level] || GEMS.A1}" alt=""><span>${LEVEL_LABEL[w.level] || "A1"}</span></div>
+            <div class="level-badge"><img src="${getGemForWord(w)}" alt=""><span>${getLevelLabelForWord(w)}</span></div>
             <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
             <div class="w-row" id="hwWordRow" style="cursor:pointer;"><span class="w">${escapeHtml(w.word)}</span>${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}</div>
             <div class="ph">${escapeHtml(w.phonetic || "")}</div>
@@ -1585,8 +1639,8 @@ function renderQuiz(root) {
 
     function renderQuestion() {
       current = makeQuestion(deck[qIndex]);
-      el.querySelector("#quizGem").src = GEMS[current.word.level] || GEMS.A1;
-      el.querySelector("#quizLevelTxt").textContent = LEVEL_LABEL[current.word.level] || "A1";
+      el.querySelector("#quizGem").src = getGemForWord(current.word);
+      el.querySelector("#quizLevelTxt").textContent = getLevelLabelForWord(current.word);
       el.querySelector("#quizWord").textContent = current.word.word;
       el.querySelector("#quizWordPrep").textContent = current.word.preposition || "";
       el.querySelector("#quizPh").textContent = current.word.phonetic || "";
@@ -1738,6 +1792,7 @@ function renderProgress(root) {
    ============================================================ */
 function renderAdd(root) {
   const editing = editingId ? allWords.find((w) => w.id === editingId) : null;
+  const initialContentType = getContentType(editing);
 
   const el = document.createElement("div");
   el.className = "section w-add";
@@ -1771,17 +1826,12 @@ function renderAdd(root) {
         <input type="text" id="fExample" placeholder="Một câu ví dụ dùng từ này" value="${escapeAttr(editing?.example || "")}">
       </div>
       <div class="f-field">
-        <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
-        <div class="tag-picker" id="tagPicker">
-          ${TAGS.map((t) => `<button type="button" class="tag-choice ${(editing?.tags || [editing?.tag || "Noun"]).includes(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+        <label>Loại nội dung</label>
+        <div class="tag-picker" id="contentTypePicker">
+          ${CONTENT_TYPES.map((t) => `<button type="button" class="tag-choice ${initialContentType === t ? "active" : ""}" data-content-type="${t}">${CONTENT_TYPE_LABEL[t]}</button>`).join("")}
         </div>
       </div>
-      <div class="f-field">
-        <label>Cấp độ</label>
-        <div class="tag-picker" id="levelPicker">
-          ${LEVELS.map((lv) => `<button type="button" class="tag-choice ${((editing?.level || "A1") === lv) ? "active" : ""}" data-lv="${lv}">${LEVEL_LABEL[lv]}</button>`).join("")}
-        </div>
-      </div>
+      <div id="conditionalFields"></div>
       <div class="form-actions">
         <button class="save" id="saveBtn">${editing ? "Lưu thay đổi" : "Thêm từ"}</button>
         <button class="cancel" id="cancelBtn" type="button">Hủy</button>
@@ -1790,25 +1840,65 @@ function renderAdd(root) {
   `;
   root.appendChild(el);
 
-  const selectedTags = new Set(editing?.tags || [editing?.tag || "Noun"]);
-  el.querySelector("#tagPicker").querySelectorAll(".tag-choice").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const t = btn.dataset.t;
-      if (selectedTags.has(t)) {
-        if (selectedTags.size === 1) return; // luôn giữ ít nhất 1 loại từ
-        selectedTags.delete(t);
-      } else {
-        selectedTags.add(t);
-      }
-      btn.classList.toggle("active", selectedTags.has(t));
-    });
-  });
+  let selectedContentType = initialContentType;
+  const selectedTags = new Set((editing?.tags || [editing?.tag || "Noun"]).filter((t) => t !== "Idiom" && t !== "Sentence"));
+  if (!selectedTags.size) selectedTags.add("Noun");
+  let selectedLevel = CEFR_LEVELS.includes(editing?.level) ? editing.level : "A1";
+  const conditional = el.querySelector("#conditionalFields");
 
-  let selectedLevel = editing?.level || "A1";
-  el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
+  function paintConditionalFields(animate = true) {
+    if (selectedContentType === "sentence") {
+      conditional.innerHTML = "";
+      return;
+    }
+    const isIdiom = selectedContentType === "idiom";
+    conditional.innerHTML = `
+      <div class="conditional-form-fields ${animate ? "fade-up" : ""}">
+        ${!isIdiom ? `
+          <div class="f-field">
+            <label>Loại từ <span style="font-weight:400;color:var(--ink-dim);">(chọn được nhiều)</span></label>
+            <div class="tag-picker" id="tagPicker">
+              ${TAGS.filter((t) => t !== "Idiom").map((t) => `<button type="button" class="tag-choice ${selectedTags.has(t) ? "active" : ""}" data-t="${t}">${TAG_LABEL[t]}</button>`).join("")}
+            </div>
+          </div>
+        ` : ""}
+        <div class="f-field">
+          <label>Cấp độ</label>
+          <div class="tag-picker" id="levelPicker">
+            ${CEFR_LEVELS.map((lv) => `<button type="button" class="tag-choice ${selectedLevel === lv ? "active" : ""}" data-lv="${lv}">${lv}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const tagPicker = el.querySelector("#tagPicker");
+    if (tagPicker) {
+      tagPicker.querySelectorAll(".tag-choice").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const t = btn.dataset.t;
+          if (selectedTags.has(t)) {
+            if (selectedTags.size === 1) return;
+            selectedTags.delete(t);
+          } else selectedTags.add(t);
+          btn.classList.toggle("active", selectedTags.has(t));
+        });
+      });
+    }
+    el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedLevel = btn.dataset.lv;
+        el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      });
+    });
+  }
+
+  paintConditionalFields(false);
+
+  el.querySelector("#contentTypePicker").querySelectorAll(".tag-choice").forEach((btn) => {
     btn.addEventListener("click", () => {
-      selectedLevel = btn.dataset.lv;
-      el.querySelector("#levelPicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      selectedContentType = btn.dataset.contentType;
+      el.querySelector("#contentTypePicker").querySelectorAll(".tag-choice").forEach((b) => b.classList.toggle("active", b === btn));
+      paintConditionalFields(true);
     });
   });
 
@@ -1824,16 +1914,14 @@ function renderAdd(root) {
       phonetic: el.querySelector("#fPhonetic").value.trim(),
       meaning,
       example: el.querySelector("#fExample").value.trim(),
-      tags: [...selectedTags],
-      tag: [...selectedTags][0],
-      level: selectedLevel
+      contentType: selectedContentType,
+      tags: selectedContentType === "vocabulary" ? [...selectedTags] : [selectedContentType === "idiom" ? "Idiom" : "Sentence"],
+      tag: selectedContentType === "vocabulary" ? [...selectedTags][0] : (selectedContentType === "idiom" ? "Idiom" : "Sentence"),
+      level: selectedContentType === "sentence" ? "Sentence" : selectedLevel
     };
     const saveBtn = el.querySelector("#saveBtn");
-    if (editing) {
-      await updateWord(uid, editing.id, data);
-    } else {
-      await addWord(uid, data);
-    }
+    if (editing) await updateWord(uid, editing.id, data);
+    else await addWord(uid, data);
     saveBtn.textContent = "✓ Đã lưu!";
     saveBtn.classList.add("saved");
     setTimeout(() => { editingId = null; goto("inbox"); }, 700);
@@ -1891,7 +1979,7 @@ function renderProfile(root) {
           <label>Cấp độ từ vựng</label>
         </div>
         <div class="level-legend">
-          ${LEVELS.map((lv) => `
+          ${CEFR_LEVELS.map((lv) => `
             <div class="level-legend-item">
               <div class="level-legend-box"><img src="${GEMS[lv]}" alt="${LEVEL_LABEL[lv]}" style="width:${LEVEL_AVATAR_SIZE[lv]}px;height:${LEVEL_AVATAR_SIZE[lv]}px;"></div>
               <div class="level-legend-lbl">${LEVEL_LABEL[lv]}</div>

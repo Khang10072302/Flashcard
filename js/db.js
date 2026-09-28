@@ -59,6 +59,7 @@ export function addWord(uid, data) {
     tag: data.tag || "Noun",
     tags: data.tags && data.tags.length ? data.tags : [data.tag || "Noun"],
     level: data.level || "A1",
+    contentType: data.contentType || "vocabulary",
     preposition: data.preposition || "",
     mastered: false,
     streak: 0,
