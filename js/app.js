@@ -1350,21 +1350,32 @@ function renderHandwriting(root) {
 
     let current = null;
     canvas.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "pen") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
       canvas.setPointerCapture(e.pointerId);
       current = [];
       entry.strokes.push(current);
       addPoint(e);
     });
     canvas.addEventListener("pointermove", (e) => {
-      if (!current) return;
+      if (e.pointerType !== "pen" || !current) return;
+
+      e.preventDefault();
+
       const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
       events.forEach((ev) => addPoint(ev));
       redraw(entry);
     });
-    function endStroke() { current = null; }
+    function endStroke(e) {
+      if (e.pointerType !== "pen") return;
+      current = null;
+    }
     canvas.addEventListener("pointerup", endStroke);
     canvas.addEventListener("pointercancel", endStroke);
-    canvas.addEventListener("pointerleave", endStroke);
+    canvas.addEventListener("lostpointercapture", endStroke);
 
     function addPoint(e) {
       const rect = canvas.getBoundingClientRect();
