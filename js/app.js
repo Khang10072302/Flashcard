@@ -991,6 +991,9 @@ function renderFlashcard(root) {
     const flipCardEl = el.querySelector("#flipCard");
     flipCardEl.style.setProperty("--shrink", shrinkForWord(current.word));
     flipCardEl.addEventListener("click", () => {
+      // Đo vị trí thật của phần chữ (lúc chưa lật) để biết cần dịch bao nhiêu px lên đầu khung,
+      // dùng transform nên chuyển động mượt thay vì đổi bố cục (bị giật).
+      if (!flipped) measureRevealShift(flipCardEl, current.word);
       flipped = !flipped;
       flipCardEl.classList.toggle("revealed", flipped);
     });
@@ -1422,7 +1425,6 @@ function renderHandwriting(root) {
 
       <div class="flip-card" style="margin-bottom:26px;">
         <div class="glass-frame">
-          <div class="glass"></div>
           <div class="word-layer">
             <div class="level-badge"><img src="${GEMS[w.level] || GEMS.A1}" alt=""><span>${LEVEL_LABEL[w.level] || "A1"}</span></div>
             <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
@@ -2073,6 +2075,20 @@ function sizeForWord(word, preposition) {
 function shrinkForWord(word) {
   const len = (word || "").length;
   return len <= 12 ? 0.8 : len <= 30 ? 0.76 : 0.7;
+}
+
+function measureRevealShift(flipCardEl, word) {
+  const layer = flipCardEl.querySelector(".word-layer");
+  const tagRow = flipCardEl.querySelector(".tag-pill-row");
+  const wRow = flipCardEl.querySelector(".w-row");
+  if (!layer || !tagRow || !wRow) return;
+  const isMobile = window.innerWidth <= 760;
+  const targetTop = isMobile ? 12 : 26;
+  const shrink = shrinkForWord(word);
+  const shift = Math.max(0, tagRow.offsetTop - targetTop);
+  const headerH = (wRow.offsetTop + wRow.offsetHeight - tagRow.offsetTop) * Math.max(shrink, 0.85);
+  flipCardEl.style.setProperty("--hdr-shift", shift + "px");
+  flipCardEl.style.setProperty("--meaning-top", Math.round(targetTop + headerH + (isMobile ? 8 : 16)) + "px");
 }
 
 function escapeHtml(s) {
