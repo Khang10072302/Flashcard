@@ -395,6 +395,11 @@ input,textarea{font-family:inherit;}
   background:var(--line-soft);color:var(--ink-soft);font-size:12px;font-weight:600;font-family:inherit;
 }
 .mastered-toggle.is-mastered{border-color:var(--green);background:rgba(48,209,88,.1);color:var(--green);}
+.handwrite-word-btn{
+  padding:7px 18px;border-radius:8px;border:1px solid var(--line);cursor:pointer;
+  background:var(--line-soft);color:var(--ink);font-size:12px;font-weight:600;font-family:inherit;
+}
+.handwrite-word-btn:hover{background:var(--line);}
 
 .tag-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;}
 .tag-Noun{background:#E8F0FE;color:#1967D2;}
