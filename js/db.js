@@ -74,6 +74,8 @@ export function addWord(uid, data) {
     quizCorrect: 0,
     quizWrong: 0,
     quizStreak: 0,
+    handwritingSeen: 0,
+    handwritingStreak: 0,
     addedAt: serverTimestamp()
   });
 }
@@ -124,6 +126,16 @@ export function recordQuizResult(uid, wordId, correct, currentQuizStreak) {
     quizCorrect: increment(correct ? 1 : 0),
     quizWrong: increment(correct ? 0 : 1),
     quizStreak: newStreak
+  });
+}
+
+// Ghi lại 1 lần luyện viết tay — không có đúng/sai (chỉ là luyện tay), nên "streak" ở đây
+// chỉ đơn giản là số lần đã luyện liên tiếp, dùng để ưu tiên trộn các từ ít luyện hơn.
+export function recordHandwritingResult(uid, wordId, currentHandwritingStreak) {
+  logActivity(uid, { handwriting: increment(1) });
+  return updateDoc(doc(db, "users", uid, "words", wordId), {
+    handwritingSeen: increment(1),
+    handwritingStreak: (currentHandwritingStreak || 0) + 1
   });
 }
 
