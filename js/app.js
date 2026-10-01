@@ -1,6 +1,6 @@
 import { requireAuth, wireLogout } from "./auth-guard.js";
 import { auth } from "./firebase-init.js";
-import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult, recordQuizResult, listenActivity, logQuizCompleted } from "./db.js";
+import { listenWords, addWord, updateWord, deleteWord, listenUserProfile, updateUserProfile, recordFlashcardResult, recordWritingResult, recordQuizResult, recordHandwritingResult, listenActivity, logQuizCompleted } from "./db.js";
 import { STAMP_FILES } from "./stamps.js";
 
 const TAGS = ["Noun", "Verb", "Adjective", "Adverb", "Phrase", "Idiom"];
@@ -61,6 +61,7 @@ let userProfile = null;
 let activityMap = {};
 let section = "dashboard";
 let editingId = null;
+let handwritingWordId = null;
 
 const content = document.getElementById("content");
 
@@ -698,6 +699,14 @@ function renderInbox(root) {
           openEditWordModal(w);
         });
       }
+      const handwriteBtn = card.querySelector(".handwrite-word-btn");
+      if (handwriteBtn) {
+        handwriteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handwritingWordId = id;
+          goto("handwriting");
+        });
+      }
     });
   }
 
@@ -787,6 +796,7 @@ function wordCardHtml(w) {
             <span class="added">Thêm ${formatDate(w.addedAt)}</span>
             <div class="word-card-foot-actions">
               <button class="edit-word-btn" type="button">Sửa</button>
+              <button class="handwrite-word-btn" type="button">✍️ Luyện viết tay từ này</button>
               <button class="mastered-toggle ${w.mastered ? "is-mastered" : ""}" type="button">${w.mastered ? "Bỏ đánh dấu" : "Đánh dấu đã thuộc"}</button>
             </div>
           </div>
@@ -1365,8 +1375,15 @@ function renderHandwriting(root) {
     return;
   }
 
-  const words = shuffle(allWords);
+  // Bấm "Luyện viết tay từ này" ở Sổ từ vựng sẽ đặt sẵn handwritingWordId — chỉ dùng 1 lần.
+  const singleMode = !!handwritingWordId;
+  const singleWord = singleMode ? allWords.find((w) => w.id === handwritingWordId) : null;
+  handwritingWordId = null;
+
+  let deckNumber = 1;
+  let deck = singleMode && singleWord ? [singleWord] : buildDeck(allWords, getHandwritingTier);
   let hIndex = 0;
+  let deckDone = false;
   let traceOn = true;
   const DEFAULT_BOX_COUNT = 10;
   let boxes = [];
@@ -1475,24 +1492,53 @@ function renderHandwriting(root) {
   function buildBoxes(count) {
     boxes = [];
     grid.innerHTML = "";
-    const w = words[hIndex].word;
+    const w = deck[hIndex].word;
     const category = sizeCategoryFor(w);
     const fontSize = ghostFontSizeFor(w, category);
     grid.className = "grid size-" + category;
     for (let i = 0; i < count; i++) makeBox(w, i, fontSize);
   }
 
+  function paintDone() {
+    el.className = "section w-mid";
+    el.innerHTML = `
+      <div class="done-state">
+        <div class="emoji">🎉</div>
+        <h1>${singleMode ? "Hoàn thành!" : `Hoàn thành Bộ ${deckNumber}!`}</h1>
+        <p>Bạn vừa luyện tay ${deck.length} từ.</p>
+        ${singleMode
+          ? `<button class="pbtn" id="hwBackBtn" style="margin-top:24px;">← Quay lại Sổ từ vựng</button>`
+          : `<button class="pbtn" id="nextDeckBtn" style="margin-top:24px;">Học bộ tiếp theo →</button>`}
+      </div>
+    `;
+    fireConfetti();
+    if (singleMode) {
+      el.querySelector("#hwBackBtn").addEventListener("click", () => goto("inbox"));
+    } else {
+      el.querySelector("#nextDeckBtn").addEventListener("click", () => {
+        deckNumber++;
+        deck = buildDeck(allWords, getHandwritingTier);
+        hIndex = 0;
+        deckDone = false;
+        paintWord();
+      });
+    }
+  }
+
   function paintWord() {
-    const w = words[hIndex];
+    if (deckDone) { paintDone(); return; }
+    const w = deck[hIndex];
+    const isLast = hIndex + 1 >= deck.length;
+    el.className = "section w-mid";
     el.innerHTML = `
       <div class="section-head">
         <h1>Handwriting</h1>
-        <p class="lede">Luyện viết tay để nhớ chính tả và hình ảnh của từ tốt hơn.</p>
+        <p class="lede">${singleMode ? `Luyện viết tay cho từ "${escapeHtml(w.word)}".` : `Luyện viết tay để nhớ chính tả và hình ảnh của từ tốt hơn · Bộ ${deckNumber}`}</p>
       </div>
 
       <div class="progress-row" style="margin-bottom:22px;">
-        <div class="progress-track"><div class="progress-fill" style="width:${((hIndex + 1) / words.length) * 100}%;"></div></div>
-        <span class="progress-count">${hIndex + 1} / ${words.length}</span>
+        <div class="progress-track"><div class="progress-fill" style="width:${((hIndex + 1) / deck.length) * 100}%;"></div></div>
+        <span class="progress-count">${hIndex + 1} / ${deck.length}</span>
       </div>
 
       <div class="flip-card" style="margin-bottom:26px;">
@@ -1519,7 +1565,7 @@ function renderHandwriting(root) {
       <div class="grid" id="hwGrid"></div>
       <div class="add-box-wrap"><button class="sbtn ghost" id="addBoxBtn">+ Thêm ô</button></div>
 
-      <button class="pbtn block" id="hwNextBtn" style="margin-top:6px;">Tiếp theo →</button>
+      <button class="pbtn block" id="hwNextBtn" style="margin-top:6px;">${isLast ? "Hoàn thành ✓" : "Tiếp theo →"}</button>
     `;
 
     grid = el.querySelector("#hwGrid");
@@ -1536,13 +1582,18 @@ function renderHandwriting(root) {
       boxes.forEach((entry) => { entry.strokes = []; redraw(entry); });
     });
     el.querySelector("#addBoxBtn").addEventListener("click", () => {
-      const cat = sizeCategoryFor(words[hIndex].word);
-      const fontSize = ghostFontSizeFor(words[hIndex].word, cat);
+      const cat = sizeCategoryFor(deck[hIndex].word);
+      const fontSize = ghostFontSizeFor(deck[hIndex].word, cat);
       const startIndex = boxes.length;
-      for (let i = 0; i < 2; i++) makeBox(words[hIndex].word, startIndex + i, fontSize);
+      for (let i = 0; i < 2; i++) makeBox(deck[hIndex].word, startIndex + i, fontSize);
     });
     el.querySelector("#hwNextBtn").addEventListener("click", () => {
-      hIndex = (hIndex + 1) % words.length;
+      recordHandwritingResult(uid, w.id, w.handwritingStreak || 0);
+      if (isLast) {
+        deckDone = true;
+      } else {
+        hIndex++;
+      }
       paintWord();
     });
   }
@@ -2090,6 +2141,7 @@ function tierFromStreak(seen, streak) {
 function getFlashcardTier(w) { return tierFromStreak(w.flashcardSeen, w.streak); }
 function getWritingTier(w) { return tierFromStreak(w.writingSeen, w.writingStreak); }
 function getQuizTier(w) { return tierFromStreak(w.quizSeen, w.quizStreak); }
+function getHandwritingTier(w) { return tierFromStreak(w.handwritingSeen, w.handwritingStreak); }
 
 // Trộn 1 bộ tối đa DECK_SIZE thẻ theo tỉ lệ DECK_QUOTA, dựa trên hàm
 // xếp hạng truyền vào (getFlashcardTier hoặc getWritingTier).
