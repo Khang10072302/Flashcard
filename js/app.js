@@ -1543,7 +1543,6 @@ function renderHandwriting(root) {
 
       <div class="flip-card" style="margin-bottom:26px;">
         <div class="glass-frame">
-          <div class="glass"></div>
           <div class="word-layer">
             <div class="level-badge"><img src="${getGemForWord(w)}" alt=""><span>${getLevelLabelForWord(w)}</span></div>
             <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
