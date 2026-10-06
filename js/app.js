@@ -1385,6 +1385,7 @@ function renderHandwriting(root) {
   let hIndex = 0;
   let deckDone = false;
   let traceOn = true;
+  let hwFlipped = false;
   const DEFAULT_BOX_COUNT = 10;
   let boxes = [];
   let grid;
@@ -1529,6 +1530,7 @@ function renderHandwriting(root) {
     if (deckDone) { paintDone(); return; }
     const w = deck[hIndex];
     const isLast = hIndex + 1 >= deck.length;
+    hwFlipped = false;
     el.className = "section w-mid";
     el.innerHTML = `
       <div class="section-head">
@@ -1541,15 +1543,24 @@ function renderHandwriting(root) {
         <span class="progress-count">${hIndex + 1} / ${deck.length}</span>
       </div>
 
-      <div class="flip-card" style="margin-bottom:26px;">
+      <div class="flip-card ${hwFlipped ? "revealed" : ""}" id="hwFlipCard" style="margin-bottom:26px;">
         <div class="glass-frame">
-          <div class="word-layer">
-            <div class="level-badge"><img src="${getGemForWord(w)}" alt=""><span>${getLevelLabelForWord(w)}</span></div>
-            <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
-            <div class="w-row" id="hwWordRow" style="cursor:pointer;"><span class="w">${escapeHtml(w.word)}</span>${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}</div>
-            <div class="ph">${escapeHtml(w.phonetic || "")}</div>
-            <div class="tip">CHẠM VÀO TỪ ĐỂ NGHE PHÁT ÂM</div>
+          <div class="meaning-layer">
+            <div class="meaning">${escapeHtml(w.meaning || "")}</div>
+            <div class="divider"></div>
+            <div class="example">${w.example ? `"${escapeHtml(w.example)}"` : ""}</div>
           </div>
+          <div class="glass"></div>
+          <div class="word-layer">
+            <div class="tag-pill-row">${(w.tags && w.tags.length ? w.tags : [w.tag || "Noun"]).map((t) => `<span class="tag-pill tag-${t}">${TAG_LABEL[t] || t}</span>`).join("")}</div>
+            <div class="w-row speak-trigger"><span class="w" style="font-size:${sizeForWord(w.word, w.preposition)}px;">${escapeHtml(w.word)}</span>${w.preposition ? `<span class="w-prep">${escapeHtml(w.preposition)}</span>` : ""}</div>
+            <div class="ph speak-trigger">${escapeHtml(w.phonetic || "")}</div>
+            <div class="tip">CHẠM ĐỂ XEM NGHĨA</div>
+          </div>
+        </div>
+        <div class="level-badge">
+          <img src="${getGemForWord(w)}" alt="${getLevelLabelForWord(w)}">
+          <span>${getLevelLabelForWord(w)}</span>
         </div>
       </div>
 
@@ -1570,7 +1581,18 @@ function renderHandwriting(root) {
     grid = el.querySelector("#hwGrid");
     buildBoxes(DEFAULT_BOX_COUNT);
 
-    el.querySelector("#hwWordRow").addEventListener("click", () => speak(w.word));
+    const hwFlipCardEl = el.querySelector("#hwFlipCard");
+    hwFlipCardEl.addEventListener("click", () => {
+      if (!hwFlipped) measureRevealShift(hwFlipCardEl, w.word);
+      hwFlipped = !hwFlipped;
+      hwFlipCardEl.classList.toggle("revealed", hwFlipped);
+    });
+    el.querySelectorAll("#hwFlipCard .speak-trigger").forEach((elx) => {
+      elx.addEventListener("click", (e) => {
+        e.stopPropagation();
+        speak(w.word);
+      });
+    });
     el.querySelector("#traceBtn").addEventListener("click", (e) => {
       traceOn = !traceOn;
       e.currentTarget.textContent = "Trace: " + (traceOn ? "Bật" : "Tắt");
